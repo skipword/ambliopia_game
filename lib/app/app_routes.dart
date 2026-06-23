@@ -1,0 +1,12 @@
+class AppRoutes {
+  static const welcome = '/';
+  static const patientData = '/patient-data';
+  static const ocularConfig = '/ocular-config';
+  static const home = '/home';
+  static const games = '/games';
+  static const calibrationStep1 = '/calibration/step-1';
+  static const calibrationStep2 = '/calibration/step-2';
+  static const calibrationStep3 = '/calibration/step-3';
+  static const profile = '/profile';
+  static const pianoVisual = '/games/piano-visual';
+}
