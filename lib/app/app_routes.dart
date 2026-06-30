@@ -8,5 +8,6 @@ class AppRoutes {
   static const calibrationStep2 = '/calibration/step-2';
   static const calibrationStep3 = '/calibration/step-3';
   static const profile = '/profile';
+  static const pianoPreparation = '/games/piano-visual/preparation';
   static const pianoVisual = '/games/piano-visual';
 }

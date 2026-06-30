@@ -1,15 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../app/app_routes.dart';
 import '../../app/app_theme.dart';
+import '../../core/models/eye.dart';
+import '../../core/state/app_state.dart';
+import '../../core/widgets/app_bottom_nav.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final appState = context.watch<AppState>();
+
+    final patientName = appState.patientDisplayName;
+    final patientSubtitle = appState.patientSubtitle;
+    final redEye = appState.redLensEye?.shortLabel ?? 'no configurado';
+    final greenEye = appState.greenLensEye?.shortLabel ?? 'no configurado';
+
     return Scaffold(
-      bottomNavigationBar: const _BottomNav(currentIndex: 0),
+      bottomNavigationBar: const AppBottomNav(currentIndex: 0),
       body: SafeArea(
         child: Column(
           children: [
@@ -22,53 +33,75 @@ class HomeScreen extends StatelessWidget {
                   bottom: Radius.circular(28),
                 ),
               ),
-              child: const Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '¡Hola de nuevo,\nfer! 👋',
-                    style: TextStyle(
+                    '¡Hola de nuevo,\n$patientName! 👋',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 28,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
-                  SizedBox(height: 10),
+                  const SizedBox(height: 10),
                   Text(
-                    'P-002 · 5 años',
-                    style: TextStyle(color: Colors.white70),
+                    patientSubtitle,
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                  const SizedBox(height: 18),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Text(
+                      '🔴 Rojo: ojo $redEye   🟢 Verde: ojo $greenEye',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
             Expanded(
-              child: Padding(
+              child: ListView(
                 padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Entrenamiento de hoy',
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ),
-                    const SizedBox(height: 20),
-                    _TrainingCard(
-                      title: 'Estimulación binocular',
-                      tag: 'Piano Visual',
-                      color: AppColors.purple,
-                      onTap: () {
-                        Navigator.of(context).pushNamed(AppRoutes.games);
-                      },
-                    ),
-                    const SizedBox(height: 18),
-                    _TrainingCard(
-                      title: 'Velocidad de reacción',
-                      tag: 'Corredor Visual',
-                      color: Colors.green.shade800,
-                      onTap: () {},
-                    ),
-                  ],
-                ),
+                children: [
+                  Text(
+                    'Entrenamiento de hoy',
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    appState.hasCompletedCalibration
+                        ? 'Gafas calibradas. Puedes iniciar el juego.'
+                        : 'Primero completa la calibración de gafas.',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 20),
+                  _TrainingCard(
+                    title: 'Estimulación binocular',
+                    tag: 'Piano Visual',
+                    color: AppColors.purple,
+                    onTap: () {
+                      Navigator.of(context).pushNamed(AppRoutes.games);
+                    },
+                  ),
+                  const SizedBox(height: 18),
+                  _TrainingCard(
+                    title: 'Velocidad de reacción',
+                    tag: 'Corredor Visual',
+                    color: Colors.green.shade800,
+                    locked: true,
+                    onTap: () {},
+                  ),
+                  const SizedBox(height: 24),
+                ],
               ),
             ),
           ],
@@ -84,12 +117,14 @@ class _TrainingCard extends StatelessWidget {
     required this.tag,
     required this.color,
     required this.onTap,
+    this.locked = false,
   });
 
   final String title;
   final String tag;
   final Color color;
   final VoidCallback onTap;
+  final bool locked;
 
   @override
   Widget build(BuildContext context) {
@@ -97,7 +132,7 @@ class _TrainingCard extends StatelessWidget {
       height: 170,
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: color,
+        color: locked ? Colors.grey.shade500 : color,
         borderRadius: BorderRadius.circular(28),
       ),
       child: Column(
@@ -116,46 +151,13 @@ class _TrainingCard extends StatelessWidget {
           const SizedBox(height: 12),
           Align(
             alignment: Alignment.bottomRight,
-            child: FilledButton(onPressed: onTap, child: const Text('Jugar')),
+            child: FilledButton(
+              onPressed: locked ? null : onTap,
+              child: Text(locked ? 'Bloqueado' : 'Jugar'),
+            ),
           ),
         ],
       ),
-    );
-  }
-}
-
-class _BottomNav extends StatelessWidget {
-  const _BottomNav({required this.currentIndex});
-
-  final int currentIndex;
-
-  @override
-  Widget build(BuildContext context) {
-    return NavigationBar(
-      selectedIndex: currentIndex,
-      onDestinationSelected: (index) {
-        if (index == 0) Navigator.of(context).pushNamed(AppRoutes.home);
-        if (index == 1) Navigator.of(context).pushNamed(AppRoutes.games);
-        if (index == 2) {
-          Navigator.of(context).pushNamed(AppRoutes.calibrationStep1);
-        }
-        if (index == 3) Navigator.of(context).pushNamed(AppRoutes.profile);
-      },
-      destinations: const [
-        NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Inicio'),
-        NavigationDestination(
-          icon: Icon(Icons.sports_esports_outlined),
-          label: 'Juegos',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.settings_outlined),
-          label: 'Calibrar',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.person_outline),
-          label: 'Perfil',
-        ),
-      ],
     );
   }
 }

@@ -10,6 +10,7 @@ import '../features/patient_registration/ocular_configuration_screen.dart';
 import '../features/patient_registration/patient_data_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../games/piano_visual/piano_visual_screen.dart';
+import '../games/piano_visual/piano_preparation_screen.dart';
 import 'app_routes.dart';
 import 'app_theme.dart';
 
@@ -34,6 +35,7 @@ class VisionKidsApp extends StatelessWidget {
         AppRoutes.calibrationStep3: (_) => const CalibrationStep3Screen(),
         AppRoutes.profile: (_) => const ProfileScreen(),
         AppRoutes.pianoVisual: (_) => const PianoVisualScreen(),
+        AppRoutes.pianoPreparation: (_) => const PianoPreparationScreen(),
       },
     );
   }
