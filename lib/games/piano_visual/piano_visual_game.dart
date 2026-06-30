@@ -6,6 +6,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 
 import '../../app/app_theme.dart';
+import 'piano_session_result.dart';
 
 class PianoVisualGame extends FlameGame {
   PianoVisualGame({required this.redContrast, required this.greenContrast});
@@ -13,13 +14,17 @@ class PianoVisualGame extends FlameGame {
   final double redContrast;
   final double greenContrast;
 
+  final DateTime startedAt = DateTime.now();
   final Random random = Random();
 
   final ValueNotifier<PianoStats> stats = ValueNotifier(PianoStats.empty());
 
+  final List<PianoStimulusEvent> _events = [];
+
   double spawnTimer = 0;
   double elapsedSeconds = 0;
   int nextTileId = 1;
+  bool isSessionFinished = false;
 
   @override
   Color backgroundColor() {
@@ -40,10 +45,12 @@ class PianoVisualGame extends FlameGame {
   void update(double dt) {
     super.update(dt);
 
+    if (isSessionFinished) return;
+
     elapsedSeconds += dt;
     spawnTimer += dt;
 
-    if (spawnTimer >= 0.75) {
+    if (spawnTimer >= 1.0) {
       spawnTimer = 0;
       spawnTile();
     }
@@ -53,7 +60,6 @@ class PianoVisualGame extends FlameGame {
     const columns = 4;
     final columnWidth = size.x / columns;
 
-    // Fondos suaves por carril
     for (int i = 0; i < columns; i++) {
       final x = i * columnWidth;
 
@@ -70,7 +76,6 @@ class PianoVisualGame extends FlameGame {
       );
     }
 
-    // Separadores verticales
     for (int i = 1; i < columns; i++) {
       final x = i * columnWidth;
 
@@ -86,20 +91,23 @@ class PianoVisualGame extends FlameGame {
   }
 
   void spawnTile() {
+    if (isSessionFinished) return;
+
     final channel = random.nextBool() ? VisualChannel.red : VisualChannel.green;
 
     const columns = 4;
     final columnWidth = size.x / columns;
-    final column = random.nextInt(columns);
+    final laneIndex = random.nextInt(columns);
 
     final tileWidth = columnWidth * 0.82;
     const tileHeight = 120.0;
 
-    final x = column * columnWidth + (columnWidth - tileWidth) / 2;
+    final x = laneIndex * columnWidth + (columnWidth - tileWidth) / 2;
 
     final tile = PianoTileComponent(
       id: nextTileId,
       channel: channel,
+      laneIndex: laneIndex,
       speed: 120 + random.nextDouble() * 45,
       createdAtSeconds: elapsedSeconds,
       color: _colorForChannel(channel),
@@ -122,6 +130,8 @@ class PianoVisualGame extends FlameGame {
   }
 
   void registerHit(PianoTileComponent tile) {
+    if (isSessionFinished) return;
+
     final current = stats.value;
 
     stats.value = current.copyWith(
@@ -137,12 +147,26 @@ class PianoVisualGame extends FlameGame {
     final reactionTimeMs = ((elapsedSeconds - tile.createdAtSeconds) * 1000)
         .round();
 
+    _events.add(
+      PianoStimulusEvent(
+        id: tile.id,
+        channel: tile.channel,
+        laneIndex: tile.laneIndex,
+        createdAtSeconds: tile.createdAtSeconds,
+        completedAtSeconds: elapsedSeconds,
+        result: StimulusResult.hit,
+        reactionTimeMs: reactionTimeMs,
+      ),
+    );
+
     debugPrint(
-      'HIT | id=${tile.id} | channel=${tile.channel.name} | reaction=${reactionTimeMs}ms',
+      'HIT | id=${tile.id} | channel=${tile.channel.name} | lane=${tile.laneIndex} | reaction=${reactionTimeMs}ms',
     );
   }
 
   void registerMiss(PianoTileComponent tile) {
+    if (isSessionFinished) return;
+
     final current = stats.value;
 
     stats.value = current.copyWith(
@@ -155,7 +179,39 @@ class PianoVisualGame extends FlameGame {
           : current.greenMisses,
     );
 
-    debugPrint('MISS | id=${tile.id} | channel=${tile.channel.name}');
+    _events.add(
+      PianoStimulusEvent(
+        id: tile.id,
+        channel: tile.channel,
+        laneIndex: tile.laneIndex,
+        createdAtSeconds: tile.createdAtSeconds,
+        completedAtSeconds: elapsedSeconds,
+        result: StimulusResult.miss,
+        reactionTimeMs: null,
+      ),
+    );
+
+    debugPrint(
+      'MISS | id=${tile.id} | channel=${tile.channel.name} | lane=${tile.laneIndex}',
+    );
+  }
+
+  PianoSessionResult finishSession() {
+    isSessionFinished = true;
+
+    for (final tile in children.whereType<PianoTileComponent>().toList()) {
+      tile.removeFromParent();
+    }
+
+    pauseEngine();
+
+    return PianoSessionResult(
+      startedAt: startedAt,
+      endedAt: DateTime.now(),
+      durationSeconds: elapsedSeconds,
+      stats: stats.value,
+      events: List.unmodifiable(_events),
+    );
   }
 }
 
@@ -164,6 +220,7 @@ class PianoTileComponent extends RectangleComponent
   PianoTileComponent({
     required this.id,
     required this.channel,
+    required this.laneIndex,
     required this.speed,
     required this.createdAtSeconds,
     required Color color,
@@ -175,6 +232,7 @@ class PianoTileComponent extends RectangleComponent
 
   final int id;
   final VisualChannel channel;
+  final int laneIndex;
   final double speed;
   final double createdAtSeconds;
   final void Function(PianoTileComponent tile) onHit;
@@ -203,54 +261,5 @@ class PianoTileComponent extends RectangleComponent
     wasTouched = true;
     onHit(this);
     removeFromParent();
-  }
-}
-
-enum VisualChannel { red, green }
-
-class PianoStats {
-  const PianoStats({
-    required this.hits,
-    required this.misses,
-    required this.redHits,
-    required this.greenHits,
-    required this.redMisses,
-    required this.greenMisses,
-  });
-
-  factory PianoStats.empty() {
-    return const PianoStats(
-      hits: 0,
-      misses: 0,
-      redHits: 0,
-      greenHits: 0,
-      redMisses: 0,
-      greenMisses: 0,
-    );
-  }
-
-  final int hits;
-  final int misses;
-  final int redHits;
-  final int greenHits;
-  final int redMisses;
-  final int greenMisses;
-
-  PianoStats copyWith({
-    int? hits,
-    int? misses,
-    int? redHits,
-    int? greenHits,
-    int? redMisses,
-    int? greenMisses,
-  }) {
-    return PianoStats(
-      hits: hits ?? this.hits,
-      misses: misses ?? this.misses,
-      redHits: redHits ?? this.redHits,
-      greenHits: greenHits ?? this.greenHits,
-      redMisses: redMisses ?? this.redMisses,
-      greenMisses: greenMisses ?? this.greenMisses,
-    );
   }
 }

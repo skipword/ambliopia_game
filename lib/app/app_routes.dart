@@ -10,4 +10,5 @@ class AppRoutes {
   static const profile = '/profile';
   static const pianoPreparation = '/games/piano-visual/preparation';
   static const pianoVisual = '/games/piano-visual';
+  static const pianoResults = '/games/piano-visual/results';
 }

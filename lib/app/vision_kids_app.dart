@@ -11,6 +11,7 @@ import '../features/patient_registration/patient_data_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../games/piano_visual/piano_visual_screen.dart';
 import '../games/piano_visual/piano_preparation_screen.dart';
+import '../games/piano_visual/piano_results_screen.dart';
 import 'app_routes.dart';
 import 'app_theme.dart';
 
@@ -36,6 +37,7 @@ class VisionKidsApp extends StatelessWidget {
         AppRoutes.profile: (_) => const ProfileScreen(),
         AppRoutes.pianoVisual: (_) => const PianoVisualScreen(),
         AppRoutes.pianoPreparation: (_) => const PianoPreparationScreen(),
+        AppRoutes.pianoResults: (_) => const PianoResultsScreen(),
       },
     );
   }

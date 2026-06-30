@@ -2,9 +2,11 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../app/app_routes.dart';
 import '../../app/app_theme.dart';
 import '../../core/models/eye.dart';
 import '../../core/state/app_state.dart';
+import 'piano_session_result.dart';
 import 'piano_visual_game.dart';
 
 class PianoVisualScreen extends StatefulWidget {
@@ -27,6 +29,14 @@ class _PianoVisualScreenState extends State<PianoVisualScreen> {
       redContrast: appState.redContrast,
       greenContrast: appState.greenContrast,
     );
+  }
+
+  void finishSession() {
+    final result = game.finishSession();
+
+    Navigator.of(
+      context,
+    ).pushReplacementNamed(AppRoutes.pianoResults, arguments: result);
   }
 
   @override
@@ -78,7 +88,12 @@ class _PianoVisualScreenState extends State<PianoVisualScreen> {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 48),
+                            FilledButton(
+                              onPressed: stats.total == 0
+                                  ? null
+                                  : finishSession,
+                              child: const Text('Terminar'),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 8),
