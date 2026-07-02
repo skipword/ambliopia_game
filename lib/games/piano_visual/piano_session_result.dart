@@ -2,24 +2,34 @@ enum VisualChannel { red, green }
 
 enum StimulusResult { hit, miss }
 
+enum PianoTileKind { tap, hold }
+
+enum PianoEndReason { manual, maxMisses }
+
 class PianoStimulusEvent {
   const PianoStimulusEvent({
     required this.id,
     required this.channel,
+    required this.tileKind,
     required this.laneIndex,
     required this.createdAtSeconds,
     required this.completedAtSeconds,
     required this.result,
     required this.reactionTimeMs,
+    required this.requiredHoldMs,
+    required this.actualHoldMs,
   });
 
   final int id;
   final VisualChannel channel;
+  final PianoTileKind tileKind;
   final int laneIndex;
   final double createdAtSeconds;
   final double completedAtSeconds;
   final StimulusResult result;
   final int? reactionTimeMs;
+  final int? requiredHoldMs;
+  final int? actualHoldMs;
 }
 
 class PianoStats {
@@ -90,6 +100,7 @@ class PianoSessionResult {
     required this.startedAt,
     required this.endedAt,
     required this.durationSeconds,
+    required this.endReason,
     required this.stats,
     required this.events,
   });
@@ -97,8 +108,11 @@ class PianoSessionResult {
   final DateTime startedAt;
   final DateTime endedAt;
   final double durationSeconds;
+  final PianoEndReason endReason;
   final PianoStats stats;
   final List<PianoStimulusEvent> events;
+
+  bool get endedByMaxMisses => endReason == PianoEndReason.maxMisses;
 
   double? get averageReactionTimeMs {
     final reactionTimes = events

@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 
 import '../../app/app_routes.dart';
 import '../../app/app_theme.dart';
-import '../../core/models/eye.dart';
 import '../../core/state/app_state.dart';
+import 'piano_level.dart';
 import 'piano_session_result.dart';
 import 'piano_visual_game.dart';
 
@@ -17,48 +17,73 @@ class PianoVisualScreen extends StatefulWidget {
 }
 
 class _PianoVisualScreenState extends State<PianoVisualScreen> {
-  late final PianoVisualGame game;
+  PianoVisualGame? game;
+  bool initialized = false;
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (initialized) return;
 
     final appState = context.read<AppState>();
+
+    final difficulty =
+        ModalRoute.of(context)?.settings.arguments as PianoDifficulty? ??
+        PianoDifficulty.basic;
 
     game = PianoVisualGame(
       redContrast: appState.redContrast,
       greenContrast: appState.greenContrast,
+      difficulty: difficulty,
+      onSessionFinished: goToResults,
     );
+
+    initialized = true;
   }
 
-  void finishSession() {
-    final result = game.finishSession();
+  void goToResults(PianoSessionResult result) {
+    Future.microtask(() {
+      if (!mounted) return;
 
-    Navigator.of(
-      context,
-    ).pushReplacementNamed(AppRoutes.pianoResults, arguments: result);
+      Navigator.of(
+        context,
+      ).pushReplacementNamed(AppRoutes.pianoResults, arguments: result);
+    });
+  }
+
+  void finishSessionManually() {
+    final currentGame = game;
+    if (currentGame == null) return;
+
+    final result = currentGame.finishSession(PianoEndReason.manual);
+    goToResults(result);
   }
 
   @override
   Widget build(BuildContext context) {
-    final appState = context.watch<AppState>();
+    final currentGame = game;
 
-    final redEye = appState.redLensEye?.shortLabel ?? 'configurado';
-    final greenEye = appState.greenLensEye?.shortLabel ?? 'dominante';
+    if (currentGame == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
         child: Stack(
           children: [
-            GameWidget(game: game),
+            GameWidget(game: currentGame),
             Positioned(
               left: 16,
               right: 16,
               top: 16,
               child: ValueListenableBuilder<PianoStats>(
-                valueListenable: game.stats,
+                valueListenable: currentGame.stats,
                 builder: (context, stats, _) {
+                  final remainingErrors =
+                      PianoVisualGame.maxMisses - stats.misses;
+
                   return Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 14,
@@ -91,43 +116,52 @@ class _PianoVisualScreenState extends State<PianoVisualScreen> {
                             FilledButton(
                               onPressed: stats.total == 0
                                   ? null
-                                  : finishSession,
+                                  : finishSessionManually,
                               child: const Text('Terminar'),
                             ),
                           ],
                         ),
                         const SizedBox(height: 8),
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            _StatItem(
-                              label: 'Aciertos',
-                              value: '${stats.hits}',
+                            Text(
+                              'Puntos: ${stats.hits}',
+                              style: const TextStyle(
+                                color: AppColors.navy,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                              ),
                             ),
-                            _StatItem(
-                              label: 'Errores',
-                              value: '${stats.misses}',
-                            ),
-                            _StatItem(
-                              label: 'Rojo',
-                              value: '${stats.redHits}',
-                              color: AppColors.red,
-                            ),
-                            _StatItem(
-                              label: 'Verde',
-                              value: '${stats.greenHits}',
-                              color: AppColors.green,
+                            Row(
+                              children: List.generate(
+                                PianoVisualGame.maxMisses,
+                                (index) {
+                                  final lost = index < stats.misses;
+
+                                  return Icon(
+                                    lost
+                                        ? Icons.favorite_border
+                                        : Icons.favorite,
+                                    color: lost ? Colors.grey : AppColors.red,
+                                    size: 26,
+                                  );
+                                },
+                              ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '🔴 ojo $redEye  ·  🟢 ojo $greenEye',
+                          remainingErrors > 0
+                              ? 'Te quedan $remainingErrors errores'
+                              : 'Fin del intento',
                           style: const TextStyle(
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w800,
                             fontSize: 12,
                           ),
                         ),
+                        const SizedBox(height: 4),
                       ],
                     ),
                   );
@@ -137,34 +171,6 @@ class _PianoVisualScreenState extends State<PianoVisualScreen> {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _StatItem extends StatelessWidget {
-  const _StatItem({required this.label, required this.value, this.color});
-
-  final String label;
-  final String value;
-  final Color? color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-            fontSize: 18,
-            color: color ?? AppColors.navy,
-          ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
-        ),
-      ],
     );
   }
 }

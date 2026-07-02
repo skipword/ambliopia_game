@@ -59,8 +59,10 @@ class PianoResultsScreen extends StatelessWidget {
                     color: AppColors.yellow,
                   ),
                   const SizedBox(height: 18),
-                  const Text(
-                    '¡Sesión completada!',
+                  Text(
+                    result.endedByMaxMisses
+                        ? '¡Buen intento!'
+                        : '¡Sesión completada!',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.white,
@@ -69,8 +71,10 @@ class PianoResultsScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  const Text(
-                    'Lo hiciste muy bien. Sigue entrenando tu visión con diversión.',
+                  Text(
+                    result.endedByMaxMisses
+                        ? 'Terminaste el intento. Puedes volver a practicar cuando quieras.'
+                        : 'Lo hiciste muy bien. Sigue entrenando tu visión con diversión.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.white70,
