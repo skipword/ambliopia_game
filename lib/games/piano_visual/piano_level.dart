@@ -1,3 +1,5 @@
+import 'dart:math';
+
 enum PianoDifficulty { basic, medium, hard }
 
 class PianoLevelConfig {
@@ -7,7 +9,8 @@ class PianoLevelConfig {
     required this.tileWidthFactor,
     required this.contrastMultiplier,
     required this.holdTileProbability,
-    required this.requiredHoldSeconds,
+    required this.minHoldSeconds,
+    required this.maxHoldSeconds,
   });
 
   final String name;
@@ -19,14 +22,21 @@ class PianoLevelConfig {
   final double tileWidthFactor;
 
   /// Multiplicador del contraste configurado en calibración.
-  /// Más alto = más visible.
   final double contrastMultiplier;
 
   /// Probabilidad de que aparezca una ficha larga.
   final double holdTileProbability;
 
-  /// Tiempo que debe mantenerse presionada una ficha larga.
-  final double requiredHoldSeconds;
+  /// Duración mínima de una ficha de mantener.
+  final double minHoldSeconds;
+
+  /// Duración máxima de una ficha de mantener.
+  final double maxHoldSeconds;
+
+  double randomHoldSeconds(Random random) {
+    return minHoldSeconds +
+        random.nextDouble() * (maxHoldSeconds - minHoldSeconds);
+  }
 }
 
 extension PianoDifficultyConfig on PianoDifficulty {
@@ -38,7 +48,8 @@ extension PianoDifficultyConfig on PianoDifficulty {
         tileWidthFactor: 0.88,
         contrastMultiplier: 1.0,
         holdTileProbability: 0.10,
-        requiredHoldSeconds: 0.50,
+        minHoldSeconds: 0.45,
+        maxHoldSeconds: 0.75,
       ),
       PianoDifficulty.medium => const PianoLevelConfig(
         name: 'Nivel 2 — Medio',
@@ -46,7 +57,8 @@ extension PianoDifficultyConfig on PianoDifficulty {
         tileWidthFactor: 0.58,
         contrastMultiplier: 0.80,
         holdTileProbability: 0.22,
-        requiredHoldSeconds: 0.70,
+        minHoldSeconds: 0.65,
+        maxHoldSeconds: 1.05,
       ),
       PianoDifficulty.hard => const PianoLevelConfig(
         name: 'Nivel 3 — Difícil',
@@ -54,7 +66,8 @@ extension PianoDifficultyConfig on PianoDifficulty {
         tileWidthFactor: 0.36,
         contrastMultiplier: 0.62,
         holdTileProbability: 0.35,
-        requiredHoldSeconds: 0.90,
+        minHoldSeconds: 0.85,
+        maxHoldSeconds: 1.35,
       ),
     };
   }

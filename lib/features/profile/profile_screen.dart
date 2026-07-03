@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../app/app_routes.dart';
 import '../../app/app_theme.dart';
 import '../../core/models/eye.dart';
 import '../../core/state/app_state.dart';
@@ -15,21 +16,24 @@ class ProfileScreen extends StatelessWidget {
 
     if (patient == null) return;
 
-    showDialog<void>(
+    showDialog<String>(
       context: context,
       builder: (_) {
-        return _EditNameDialog(
-          initialName: patient.name,
-          onSave: (newName) {
-            appState.setPatient(
-              code: patient.code,
-              name: newName,
-              age: patient.age,
-            );
-          },
-        );
+        return _EditNameDialog(initialName: patient.name);
       },
-    );
+    ).then((newName) {
+      if (newName == null) return;
+      if (newName.trim().isEmpty) return;
+
+      appState.setPatient(code: patient.code, name: newName, age: patient.age);
+    });
+  }
+
+  void recalibrate(BuildContext context) {
+    final appState = context.read<AppState>();
+
+    appState.setCalibrationReturnRoute(AppRoutes.profile);
+    Navigator.of(context).pushNamed(AppRoutes.calibrationStep1);
   }
 
   @override
@@ -37,52 +41,67 @@ class ProfileScreen extends StatelessWidget {
     final appState = context.watch<AppState>();
 
     final patient = appState.patient;
-    final redEye = appState.redLensEye?.shortLabel ?? 'no configurado';
-    final greenEye = appState.greenLensEye?.shortLabel ?? 'no configurado';
+    final redEye = appState.redLensEye?.label ?? 'No configurado';
+    final greenEye = appState.greenLensEye?.label ?? 'No configurado';
+
+    final redContrast = (appState.redContrast * 100).round();
+    final greenContrast = (appState.greenContrast * 100).round();
 
     return Scaffold(
-      bottomNavigationBar: const AppBottomNav(currentIndex: 3),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
           children: [
             Text('Perfil', style: Theme.of(context).textTheme.headlineMedium),
             const SizedBox(height: 8),
-            Text(
+            const Text(
               'Información del paciente y configuración visual.',
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: TextStyle(
+                color: AppColors.textMuted,
+                fontSize: 16,
+                height: 1.4,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(height: 24),
+
+            // Datos del paciente
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(22),
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: AppColors.purple,
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(30),
               ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.person, color: Colors.white, size: 54),
-                  const SizedBox(height: 18),
+                  const Icon(Icons.person, color: Colors.white, size: 64),
+                  const SizedBox(height: 16),
                   Text(
-                    patient?.name ?? 'Paciente sin registrar',
+                    patient?.name ?? 'Paciente',
+                    textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 26,
+                      fontSize: 28,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     patient == null
-                        ? 'Sin código asignado'
+                        ? 'Sin datos registrados'
                         : '${patient.code} · ${patient.age} años',
-                    style: const TextStyle(color: Colors.white70, fontSize: 16),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 20),
                   SizedBox(
                     width: double.infinity,
+                    height: 52,
                     child: FilledButton.icon(
                       onPressed: patient == null
                           ? null
@@ -90,80 +109,280 @@ class ProfileScreen extends StatelessWidget {
                               showEditNameDialog(context);
                             },
                       icon: const Icon(Icons.edit),
-                      label: const Text('Editar nombre'),
+                      label: const Text(
+                        'Editar nombre',
+                        style: TextStyle(fontWeight: FontWeight.w900),
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
+
             const SizedBox(height: 24),
+
+            _SectionTitle(title: 'Configuración ocular'),
+            const SizedBox(height: 14),
             _InfoCard(
-              title: 'Configuración de gafas',
+              icon: Icons.visibility,
+              title: 'Gafas rojo-verde',
               children: [
                 _InfoRow(
-                  icon: Icons.circle,
-                  iconColor: AppColors.red,
+                  color: AppColors.red,
                   label: 'Lente rojo',
-                  value: 'Ojo $redEye',
+                  value: redEye,
                 ),
                 const SizedBox(height: 12),
                 _InfoRow(
-                  icon: Icons.circle,
-                  iconColor: AppColors.green,
+                  color: AppColors.green,
                   label: 'Lente verde',
-                  value: 'Ojo $greenEye',
+                  value: greenEye,
                 ),
               ],
             ),
+
             const SizedBox(height: 18),
+
             _InfoCard(
+              icon: appState.hasCompletedCalibration
+                  ? Icons.check_circle
+                  : Icons.warning_amber_rounded,
+              iconColor: appState.hasCompletedCalibration
+                  ? AppColors.green
+                  : Colors.orange,
               title: 'Estado de calibración',
               children: [
-                _InfoRow(
-                  icon: appState.hasCompletedCalibration
-                      ? Icons.check_circle
-                      : Icons.warning_amber_rounded,
-                  iconColor: appState.hasCompletedCalibration
-                      ? AppColors.green
-                      : Colors.orange,
-                  label: 'Gafas',
-                  value: appState.hasCompletedCalibration
-                      ? 'Calibradas'
-                      : 'Pendiente',
+                Text(
+                  appState.hasCompletedCalibration
+                      ? 'La calibración está completada.'
+                      : 'La calibración aún no está completada.',
+                  style: const TextStyle(
+                    color: AppColors.navy,
+                    fontSize: 15,
+                    height: 1.4,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      recalibrate(context);
+                    },
+                    icon: const Icon(Icons.settings),
+                    label: const Text(
+                      'Recalibrar gafas',
+                      style: TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                  ),
                 ),
               ],
             ),
+
             const SizedBox(height: 18),
+
             _InfoCard(
-              title: 'Contraste configurado',
+              icon: Icons.tune,
+              title: 'Contraste actual',
               children: [
-                _InfoRow(
-                  icon: Icons.tune,
-                  iconColor: AppColors.red,
+                _ContrastRow(
+                  color: AppColors.red,
                   label: 'Rojo',
-                  value: '${(appState.redContrast * 100).round()}%',
+                  value: '$redContrast%',
                 ),
                 const SizedBox(height: 12),
-                _InfoRow(
-                  icon: Icons.tune,
-                  iconColor: AppColors.green,
+                _ContrastRow(
+                  color: AppColors.green,
                   label: 'Verde',
-                  value: '${(appState.greenContrast * 100).round()}%',
+                  value: '$greenContrast%',
                 ),
               ],
             ),
+
+            const SizedBox(height: 24),
+
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.info_outline, color: AppColors.cyan, size: 30),
+                  SizedBox(width: 14),
+                  Expanded(
+                    child: Text(
+                      'Más adelante aquí podremos agregar historial de sesiones y resultados técnicos para el adulto responsable.',
+                      style: TextStyle(
+                        color: AppColors.navy,
+                        fontSize: 15,
+                        height: 1.4,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
           ],
         ),
+      ),
+      bottomNavigationBar: const AppBottomNav(currentIndex: 3),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(title, style: Theme.of(context).textTheme.titleLarge);
+  }
+}
+
+class _InfoCard extends StatelessWidget {
+  const _InfoCard({
+    required this.icon,
+    required this.title,
+    required this.children,
+    this.iconColor = AppColors.cyan,
+  });
+
+  final IconData icon;
+  final String title;
+  final List<Widget> children;
+  final Color iconColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(26),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: iconColor, size: 32),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: AppColors.navy,
+                    fontSize: 19,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          ...children,
+        ],
       ),
     );
   }
 }
 
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({
+    required this.color,
+    required this.label,
+    required this.value,
+  });
+
+  final Color color;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(Icons.circle, color: color, size: 18),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            '$label → $value',
+            style: const TextStyle(
+              color: AppColors.navy,
+              fontSize: 16,
+              height: 1.3,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ContrastRow extends StatelessWidget {
+  const _ContrastRow({
+    required this.color,
+    required this.label,
+    required this.value,
+  });
+
+  final Color color;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(Icons.circle, color: color, size: 18),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: AppColors.navy,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            color: color,
+            fontSize: 16,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _EditNameDialog extends StatefulWidget {
-  const _EditNameDialog({required this.initialName, required this.onSave});
+  const _EditNameDialog({required this.initialName});
 
   final String initialName;
-  final void Function(String newName) onSave;
 
   @override
   State<_EditNameDialog> createState() => _EditNameDialogState();
@@ -175,6 +394,7 @@ class _EditNameDialogState extends State<_EditNameDialog> {
   @override
   void initState() {
     super.initState();
+
     controller = TextEditingController(text: widget.initialName);
   }
 
@@ -189,8 +409,7 @@ class _EditNameDialogState extends State<_EditNameDialog> {
 
     if (newName.isEmpty) return;
 
-    widget.onSave(newName);
-    Navigator.of(context).pop();
+    Navigator.of(context).pop(newName);
   }
 
   @override
@@ -200,11 +419,10 @@ class _EditNameDialogState extends State<_EditNameDialog> {
       content: TextField(
         controller: controller,
         autofocus: true,
-        decoration: const InputDecoration(
-          labelText: 'Nombre del paciente',
-          hintText: 'Ej: Sofía',
-        ),
-        onSubmitted: (_) => save(),
+        decoration: const InputDecoration(labelText: 'Nombre del paciente'),
+        onSubmitted: (_) {
+          save();
+        },
       ),
       actions: [
         TextButton(
@@ -214,87 +432,6 @@ class _EditNameDialogState extends State<_EditNameDialog> {
           child: const Text('Cancelar'),
         ),
         FilledButton(onPressed: save, child: const Text('Guardar')),
-      ],
-    );
-  }
-}
-
-class _InfoCard extends StatelessWidget {
-  const _InfoCard({required this.title, required this.children});
-
-  final String title;
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: AppColors.navy,
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 16),
-          ...children,
-        ],
-      ),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.icon,
-    required this.iconColor,
-    required this.label,
-    required this.value,
-  });
-
-  final IconData icon;
-  final Color iconColor;
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, color: iconColor, size: 22),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(
-              color: AppColors.textMuted,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-        Text(
-          value,
-          style: const TextStyle(
-            color: AppColors.navy,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
       ],
     );
   }

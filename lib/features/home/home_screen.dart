@@ -16,96 +16,152 @@ class HomeScreen extends StatelessWidget {
 
     final patientName = appState.patientDisplayName;
     final patientSubtitle = appState.patientSubtitle;
-    final redEye = appState.redLensEye?.shortLabel ?? 'no configurado';
-    final greenEye = appState.greenLensEye?.shortLabel ?? 'no configurado';
+
+    final redEye = appState.redLensEye?.shortLabel ?? 'configurado';
+    final greenEye = appState.greenLensEye?.shortLabel ?? 'dominante';
 
     return Scaffold(
-      bottomNavigationBar: const AppBottomNav(currentIndex: 0),
       body: SafeArea(
-        child: Column(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
           children: [
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(24),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppColors.purple,
-                borderRadius: BorderRadius.vertical(
-                  bottom: Radius.circular(28),
-                ),
+                borderRadius: BorderRadius.circular(30),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const Text(
+                    'Hola,',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
                   Text(
-                    '¡Hola de nuevo,\n$patientName! 👋',
+                    patientName,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 28,
+                      fontSize: 31,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   Text(
                     patientSubtitle,
-                    style: const TextStyle(color: Colors.white70),
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 20),
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(14),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(18),
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      '🔴 Rojo: ojo $redEye   🟢 Verde: ojo $greenEye',
+                      '🔴 Rojo: ojo $redEye\n🟢 Verde: ojo $greenEye',
                       style: const TextStyle(
                         color: Colors.white,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        height: 1.5,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.all(24),
-                children: [
-                  Text(
-                    'Entrenamiento de hoy',
-                    style: Theme.of(context).textTheme.headlineMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    appState.hasCompletedCalibration
-                        ? 'Gafas calibradas. Puedes iniciar el juego.'
-                        : 'Primero completa la calibración de gafas.',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 20),
-                  _TrainingCard(
-                    title: 'Estimulación binocular',
-                    tag: 'Piano Visual',
-                    color: AppColors.purple,
-                    onTap: () {
-                      Navigator.of(context).pushNamed(AppRoutes.games);
-                    },
-                  ),
-                  const SizedBox(height: 18),
-                  _TrainingCard(
-                    title: 'Velocidad de reacción',
-                    tag: 'Corredor Visual',
-                    color: Colors.green.shade800,
-                    locked: true,
-                    onTap: () {},
-                  ),
-                  const SizedBox(height: 24),
-                ],
-              ),
+            const SizedBox(height: 24),
+            _StatusCard(calibrated: appState.hasCompletedCalibration),
+            const SizedBox(height: 24),
+            Text(
+              'Entrenamiento de hoy',
+              style: Theme.of(context).textTheme.titleLarge,
             ),
+            const SizedBox(height: 14),
+            _TrainingCard(
+              title: 'Piano Visual',
+              description:
+                  'Toca las fichas cuando lleguen a la zona correcta y completa tu sesión visual.',
+              icon: Icons.piano,
+              buttonText: 'Ir al juego',
+              onTap: () {
+                Navigator.of(context).pushNamed(AppRoutes.games);
+              },
+            ),
+            const SizedBox(height: 16),
+            _TrainingCard(
+              title: 'Corredor Visual',
+              description:
+                  'Nuevo minijuego en construcción para próximas sesiones.',
+              icon: Icons.directions_run,
+              buttonText: 'Bloqueado',
+              locked: true,
+              onTap: null,
+            ),
+            const SizedBox(height: 24),
+            _TipCard(),
+            const SizedBox(height: 24),
           ],
         ),
+      ),
+      bottomNavigationBar: const AppBottomNav(currentIndex: 0),
+    );
+  }
+}
+
+class _StatusCard extends StatelessWidget {
+  const _StatusCard({required this.calibrated});
+
+  final bool calibrated;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: calibrated ? const Color(0xFFECFDF5) : const Color(0xFFFFF7ED),
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(
+          color: calibrated
+              ? AppColors.green.withValues(alpha: 0.25)
+              : Colors.orange.withValues(alpha: 0.25),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            calibrated ? Icons.check_circle : Icons.warning_amber_rounded,
+            color: calibrated ? AppColors.green : Colors.orange,
+            size: 38,
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              calibrated
+                  ? 'Las gafas ya están calibradas. Puedes iniciar el entrenamiento.'
+                  : 'Antes de jugar, debes completar la calibración de gafas.',
+              style: const TextStyle(
+                color: AppColors.navy,
+                fontSize: 15,
+                height: 1.4,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -114,46 +170,125 @@ class HomeScreen extends StatelessWidget {
 class _TrainingCard extends StatelessWidget {
   const _TrainingCard({
     required this.title,
-    required this.tag,
-    required this.color,
+    required this.description,
+    required this.icon,
+    required this.buttonText,
     required this.onTap,
     this.locked = false,
   });
 
   final String title;
-  final String tag;
-  final Color color;
-  final VoidCallback onTap;
+  final String description;
+  final IconData icon;
+  final String buttonText;
+  final VoidCallback? onTap;
   final bool locked;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 170,
+      width: double.infinity,
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: locked ? Colors.grey.shade500 : color,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(tag, style: const TextStyle(color: AppColors.cyan)),
-          const Spacer(),
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 21,
-              fontWeight: FontWeight.w900,
-            ),
+          Row(
+            children: [
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  color: locked
+                      ? Colors.grey.withValues(alpha: 0.16)
+                      : AppColors.cyan.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Icon(
+                  locked ? Icons.lock : icon,
+                  color: locked ? Colors.grey : AppColors.cyan,
+                  size: 32,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: AppColors.navy,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      description,
+                      style: const TextStyle(
+                        color: AppColors.textMuted,
+                        fontSize: 14,
+                        height: 1.35,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.bottomRight,
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
             child: FilledButton(
               onPressed: locked ? null : onTap,
-              child: Text(locked ? 'Bloqueado' : 'Jugar'),
+              child: Text(
+                buttonText,
+                style: const TextStyle(fontWeight: FontWeight.w900),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TipCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEFF6FF),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: const Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.lightbulb, color: AppColors.cyan, size: 32),
+          SizedBox(width: 14),
+          Expanded(
+            child: Text(
+              'Recuerda hacer sesiones cortas y descansar los ojos después de jugar.',
+              style: TextStyle(
+                color: AppColors.navy,
+                fontSize: 15,
+                height: 1.4,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
         ],

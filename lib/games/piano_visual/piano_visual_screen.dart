@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -20,6 +22,10 @@ class _PianoVisualScreenState extends State<PianoVisualScreen> {
   PianoVisualGame? game;
   bool initialized = false;
 
+  int? countdownValue = 3;
+  Timer? countdownTimer;
+  Timer? hideCountdownTimer;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -40,6 +46,42 @@ class _PianoVisualScreenState extends State<PianoVisualScreen> {
     );
 
     initialized = true;
+
+    startCountdown();
+  }
+
+  void startCountdown() {
+    countdownTimer?.cancel();
+
+    countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
+
+      final current = countdownValue ?? 0;
+
+      if (current > 1) {
+        setState(() {
+          countdownValue = current - 1;
+        });
+
+        return;
+      }
+
+      timer.cancel();
+
+      setState(() {
+        countdownValue = 0;
+      });
+
+      game?.startGame();
+
+      hideCountdownTimer = Timer(const Duration(milliseconds: 650), () {
+        if (!mounted) return;
+
+        setState(() {
+          countdownValue = null;
+        });
+      });
+    });
   }
 
   void goToResults(PianoSessionResult result) {
@@ -58,6 +100,13 @@ class _PianoVisualScreenState extends State<PianoVisualScreen> {
 
     final result = currentGame.finishSession(PianoEndReason.manual);
     goToResults(result);
+  }
+
+  @override
+  void dispose() {
+    countdownTimer?.cancel();
+    hideCountdownTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -81,9 +130,6 @@ class _PianoVisualScreenState extends State<PianoVisualScreen> {
               child: ValueListenableBuilder<PianoStats>(
                 valueListenable: currentGame.stats,
                 builder: (context, stats, _) {
-                  final remainingErrors =
-                      PianoVisualGame.maxMisses - stats.misses;
-
                   return Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 14,
@@ -139,35 +185,58 @@ class _PianoVisualScreenState extends State<PianoVisualScreen> {
                                 (index) {
                                   final lost = index < stats.misses;
 
-                                  return Icon(
-                                    lost
-                                        ? Icons.favorite_border
-                                        : Icons.favorite,
-                                    color: lost ? Colors.grey : AppColors.red,
-                                    size: 26,
+                                  return Padding(
+                                    padding: const EdgeInsets.only(left: 4),
+                                    child: Icon(
+                                      lost
+                                          ? Icons.favorite_border
+                                          : Icons.favorite,
+                                      color: lost ? Colors.grey : AppColors.red,
+                                      size: 28,
+                                    ),
                                   );
                                 },
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          remainingErrors > 0
-                              ? 'Te quedan $remainingErrors errores'
-                              : 'Fin del intento',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
                       ],
                     ),
                   );
                 },
               ),
             ),
+            if (countdownValue != null)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.45),
+                  child: Center(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 250),
+                      transitionBuilder: (child, animation) {
+                        return ScaleTransition(
+                          scale: animation,
+                          child: FadeTransition(
+                            opacity: animation,
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: Text(
+                        countdownValue == 0 ? '¡Vamos!' : '$countdownValue',
+                        key: ValueKey(countdownValue),
+                        style: TextStyle(
+                          color: countdownValue == 0
+                              ? AppColors.yellow
+                              : Colors.white,
+                          fontSize: countdownValue == 0 ? 58 : 82,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),

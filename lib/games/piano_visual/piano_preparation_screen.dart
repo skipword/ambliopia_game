@@ -17,6 +17,19 @@ class PianoPreparationScreen extends StatefulWidget {
 class _PianoPreparationScreenState extends State<PianoPreparationScreen> {
   PianoDifficulty selectedDifficulty = PianoDifficulty.basic;
 
+  void startGame(BuildContext context) {
+    Navigator.of(
+      context,
+    ).pushNamed(AppRoutes.pianoVisual, arguments: selectedDifficulty);
+  }
+
+  void recalibrate(BuildContext context) {
+    final appState = context.read<AppState>();
+
+    appState.setCalibrationReturnRoute(AppRoutes.pianoPreparation);
+    Navigator.of(context).pushNamed(AppRoutes.calibrationStep1);
+  }
+
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
@@ -25,10 +38,14 @@ class _PianoPreparationScreenState extends State<PianoPreparationScreen> {
     final greenEye = appState.greenLensEye?.label ?? 'Ojo dominante';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Preparar juego')),
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        title: const Text('Preparar juego'),
+      ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
           children: [
             Text(
               'Piano Visual',
@@ -36,26 +53,42 @@ class _PianoPreparationScreenState extends State<PianoPreparationScreen> {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Antes de iniciar, revisa que las gafas estén bien colocadas.',
+              'Antes de iniciar, revisa la configuración y elige un nivel.',
+              style: TextStyle(
+                color: AppColors.textMuted,
+                fontSize: 16,
+                height: 1.4,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 24),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(22),
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: AppColors.purple,
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(30),
               ),
               child: Column(
                 children: [
-                  const Icon(Icons.visibility, color: Colors.white, size: 56),
+                  const Icon(Icons.visibility, color: Colors.white, size: 58),
                   const SizedBox(height: 18),
+                  const Text(
+                    'Revisa las gafas',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 25,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   _LensInstruction(
                     color: AppColors.red,
                     label: 'Lente rojo',
                     value: redEye,
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 12),
                   _LensInstruction(
                     color: AppColors.green,
                     label: 'Lente verde',
@@ -85,26 +118,72 @@ class _PianoPreparationScreenState extends State<PianoPreparationScreen> {
             const SizedBox(height: 12),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(18),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(22),
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(24),
               ),
-              child: const Text(
-                'Regla: la sesión termina si se acumulan 3 errores.',
-                style: TextStyle(height: 1.4, fontWeight: FontWeight.w700),
+              child: const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.info_outline, color: AppColors.cyan, size: 30),
+                  SizedBox(width: 14),
+                  Expanded(
+                    child: Text(
+                      'La sesión termina si se acumulan 3 errores. Toca las fichas solo cuando lleguen a la zona indicada.',
+                      style: TextStyle(
+                        color: AppColors.navy,
+                        fontSize: 15,
+                        height: 1.4,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF7ED),
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.touch_app, color: Colors.orange, size: 30),
+                  SizedBox(width: 14),
+                  Expanded(
+                    child: Text(
+                      'Algunas fichas largas se deben mantener presionadas hasta completar el círculo de progreso.',
+                      style: TextStyle(
+                        color: AppColors.navy,
+                        fontSize: 15,
+                        height: 1.4,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 24),
+          ],
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
             SizedBox(
               width: double.infinity,
               height: 58,
               child: FilledButton.icon(
                 onPressed: () {
-                  Navigator.of(context).pushNamed(
-                    AppRoutes.pianoVisual,
-                    arguments: selectedDifficulty,
-                  );
+                  startGame(context);
                 },
                 icon: const Icon(Icons.play_arrow),
                 label: const Text(
@@ -113,20 +192,19 @@ class _PianoPreparationScreenState extends State<PianoPreparationScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
-              height: 54,
+              height: 52,
               child: OutlinedButton.icon(
                 onPressed: () {
-                  appState.setCalibrationReturnRoute(
-                    AppRoutes.pianoPreparation,
-                  );
-
-                  Navigator.of(context).pushNamed(AppRoutes.calibrationStep1);
+                  recalibrate(context);
                 },
                 icon: const Icon(Icons.settings),
-                label: const Text('Recalibrar gafas'),
+                label: const Text(
+                  'Recalibrar gafas',
+                  style: TextStyle(fontWeight: FontWeight.w800),
+                ),
               ),
             ),
           ],
@@ -152,19 +230,19 @@ class _DifficultyOption extends StatelessWidget {
     final config = difficulty.config;
 
     return Material(
-      color: selected ? const Color(0xFFE0F7FA) : Colors.white,
-      borderRadius: BorderRadius.circular(20),
+      color: selected ? const Color(0xFFDDF8FB) : Colors.white,
+      borderRadius: BorderRadius.circular(22),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(22),
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(22),
             border: Border.all(
               color: selected ? AppColors.cyan : Colors.transparent,
-              width: 2,
+              width: 2.5,
             ),
           ),
           child: Row(
@@ -172,6 +250,7 @@ class _DifficultyOption extends StatelessWidget {
               Icon(
                 selected ? Icons.check_circle : Icons.circle_outlined,
                 color: selected ? AppColors.cyan : AppColors.textMuted,
+                size: 30,
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -181,14 +260,20 @@ class _DifficultyOption extends StatelessWidget {
                     Text(
                       config.name,
                       style: const TextStyle(
-                        fontWeight: FontWeight.w900,
                         color: AppColors.navy,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 5),
                     Text(
                       config.description,
-                      style: const TextStyle(color: AppColors.textMuted),
+                      style: const TextStyle(
+                        color: AppColors.textMuted,
+                        fontSize: 14,
+                        height: 1.35,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
@@ -223,7 +308,8 @@ class _LensInstruction extends StatelessWidget {
             '$label → $value',
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 17,
+              fontSize: 16,
+              height: 1.3,
               fontWeight: FontWeight.w800,
             ),
           ),

@@ -14,6 +14,8 @@ class PianoResultsScreen extends StatelessWidget {
 
     final accuracy = result.stats.hits / total;
 
+    if (result.endedByMaxMisses) return 1;
+
     if (accuracy >= 0.85) return 3;
     if (accuracy >= 0.60) return 2;
     return 1;
@@ -27,6 +29,7 @@ class PianoResultsScreen extends StatelessWidget {
     final stars = calculateStars(result);
 
     debugPrint('===== RESULTADO TÉCNICO DE SESIÓN =====');
+    debugPrint('Motivo finalización: ${result.endReason.name}');
     debugPrint('Aciertos: ${result.stats.hits}');
     debugPrint('Errores: ${result.stats.misses}');
     debugPrint('Rojo hits: ${result.stats.redHits}');
@@ -41,9 +44,8 @@ class PianoResultsScreen extends StatelessWidget {
     return Scaffold(
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
           children: [
-            const SizedBox(height: 24),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(28),
@@ -53,8 +55,10 @@ class PianoResultsScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  const Icon(
-                    Icons.emoji_events,
+                  Icon(
+                    result.endedByMaxMisses
+                        ? Icons.favorite
+                        : Icons.emoji_events,
                     size: 86,
                     color: AppColors.yellow,
                   ),
@@ -64,7 +68,7 @@ class PianoResultsScreen extends StatelessWidget {
                         ? '¡Buen intento!'
                         : '¡Sesión completada!',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 30,
                       fontWeight: FontWeight.w900,
@@ -73,13 +77,14 @@ class PianoResultsScreen extends StatelessWidget {
                   const SizedBox(height: 10),
                   Text(
                     result.endedByMaxMisses
-                        ? 'Terminaste el intento. Puedes volver a practicar cuando quieras.'
+                        ? 'Lo hiciste bien. Puedes volver a practicar cuando quieras.'
                         : 'Lo hiciste muy bien. Sigue entrenando tu visión con diversión.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 16,
                       height: 1.4,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 26),
@@ -116,27 +121,38 @@ class PianoResultsScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Column(
+              child: Column(
                 children: [
-                  Icon(Icons.favorite, size: 52, color: AppColors.green),
-                  SizedBox(height: 14),
+                  Icon(
+                    result.endedByMaxMisses
+                        ? Icons.refresh
+                        : Icons.check_circle,
+                    size: 54,
+                    color: result.endedByMaxMisses
+                        ? AppColors.cyan
+                        : AppColors.green,
+                  ),
+                  const SizedBox(height: 14),
                   Text(
-                    '¡Buen trabajo!',
+                    result.endedByMaxMisses
+                        ? 'Puedes intentarlo otra vez'
+                        : '¡Buen trabajo!',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppColors.navy,
                       fontSize: 24,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
-                  SizedBox(height: 8),
-                  Text(
+                  const SizedBox(height: 8),
+                  const Text(
                     'Tu sesión quedó registrada para que el adulto responsable pueda revisarla después.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: AppColors.textMuted,
                       fontSize: 15,
                       height: 1.4,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
@@ -151,6 +167,7 @@ class PianoResultsScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(24),
               ),
               child: const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Icon(Icons.lightbulb, color: AppColors.cyan, size: 34),
                   SizedBox(width: 14),
@@ -159,8 +176,9 @@ class PianoResultsScreen extends StatelessWidget {
                       'Recuerda descansar los ojos después de jugar.',
                       style: TextStyle(
                         color: AppColors.navy,
-                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
                         height: 1.4,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
@@ -175,10 +193,10 @@ class PianoResultsScreen extends StatelessWidget {
                 onPressed: () {
                   Navigator.of(
                     context,
-                  ).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
+                  ).pushNamedAndRemoveUntil(AppRoutes.games, (route) => false);
                 },
                 child: const Text(
-                  'Volver al inicio',
+                  'Jugar otra vez',
                   style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
                 ),
               ),
@@ -191,14 +209,15 @@ class PianoResultsScreen extends StatelessWidget {
                 onPressed: () {
                   Navigator.of(
                     context,
-                  ).pushNamedAndRemoveUntil(AppRoutes.games, (route) => false);
+                  ).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
                 },
                 child: const Text(
-                  'Elegir otro juego',
+                  'Volver al inicio',
                   style: TextStyle(fontWeight: FontWeight.w800),
                 ),
               ),
             ),
+            const SizedBox(height: 16),
           ],
         ),
       ),
