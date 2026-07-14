@@ -15,6 +15,10 @@ import '../games/piano_visual/piano_results_screen.dart';
 import 'app_routes.dart';
 import 'app_theme.dart';
 
+import '../games/break_the_row/break_the_row_preparation_screen.dart';
+import '../games/break_the_row/break_the_row_results_screen.dart';
+import '../games/break_the_row/break_the_row_screen.dart';
+
 class VisionKidsApp extends StatelessWidget {
   const VisionKidsApp({super.key});
 
@@ -35,9 +39,15 @@ class VisionKidsApp extends StatelessWidget {
         AppRoutes.calibrationStep2: (_) => const CalibrationStep2Screen(),
         AppRoutes.calibrationStep3: (_) => const CalibrationStep3Screen(),
         AppRoutes.profile: (_) => const ProfileScreen(),
+
         AppRoutes.pianoVisual: (_) => const PianoVisualScreen(),
         AppRoutes.pianoPreparation: (_) => const PianoPreparationScreen(),
         AppRoutes.pianoResults: (_) => const PianoResultsScreen(),
+
+        AppRoutes.breakTheRowPreparation: (_) =>
+            const BreakTheRowPreparationScreen(),
+        AppRoutes.breakTheRow: (_) => const BreakTheRowScreen(),
+        AppRoutes.breakTheRowResults: (_) => const BreakTheRowResultsScreen(),
       },
     );
   }

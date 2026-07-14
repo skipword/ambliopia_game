@@ -21,6 +21,18 @@ class GamesMenuScreen extends StatelessWidget {
     Navigator.of(context).pushNamed(AppRoutes.calibrationStep1);
   }
 
+  void startBreakTheRow(BuildContext context) {
+    final appState = context.read<AppState>();
+
+    if (appState.hasCompletedCalibration) {
+      Navigator.of(context).pushNamed(AppRoutes.breakTheRowPreparation);
+      return;
+    }
+
+    appState.setCalibrationReturnRoute(AppRoutes.breakTheRowPreparation);
+    Navigator.of(context).pushNamed(AppRoutes.calibrationStep1);
+  }
+
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
@@ -69,17 +81,18 @@ class GamesMenuScreen extends StatelessWidget {
             ),
             const SizedBox(height: 18),
             _GameCard(
-              title: 'Corredor Visual',
-              subtitle: 'Próximamente',
+              title: 'Rompe la Fila',
+              subtitle: 'Nuevo juego',
               description:
-                  'Actividad en construcción para próximas versiones de Vision Kids.',
-              icon: Icons.directions_run,
-              color: Colors.grey,
+                  'Mueve, rota y baja piezas para completar líneas horizontales en un tablero visual.',
+              icon: Icons.grid_view,
+              color: AppColors.green,
               completedSessions: 0,
-              levelText: 'Bloqueado',
-              buttonText: 'No disponible',
-              locked: true,
-              onTap: null,
+              levelText: 'Nivel 1 disponible',
+              buttonText: 'Iniciar juego',
+              onTap: () {
+                startBreakTheRow(context);
+              },
             ),
             const SizedBox(height: 18),
             _GameCard(

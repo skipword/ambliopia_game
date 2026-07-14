@@ -102,13 +102,14 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             _TrainingCard(
-              title: 'Corredor Visual',
+              title: 'Rompe la Fila',
               description:
-                  'Nuevo minijuego en construcción para próximas sesiones.',
-              icon: Icons.directions_run,
-              buttonText: 'Bloqueado',
-              locked: true,
-              onTap: null,
+                  'Mueve, rota y baja piezas para completar líneas horizontales.',
+              icon: Icons.grid_view,
+              buttonText: 'Ir al juego',
+              onTap: () {
+                Navigator.of(context).pushNamed(AppRoutes.games);
+              },
             ),
             const SizedBox(height: 24),
             _TipCard(),
