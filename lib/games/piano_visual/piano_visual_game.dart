@@ -44,6 +44,38 @@ class PianoVisualGame extends FlameGame {
   double get hitZoneTop => size.y * 0.70;
   double get hitZoneBottom => size.y * 0.88;
 
+  double get spawnInterval {
+    return switch (difficulty) {
+      PianoDifficulty.basic => 1.25,
+      PianoDifficulty.medium => 1.05,
+      PianoDifficulty.hard => 0.90,
+    };
+  }
+
+  int get maxActiveTiles {
+    return switch (difficulty) {
+      PianoDifficulty.basic => 3,
+      PianoDifficulty.medium => 4,
+      PianoDifficulty.hard => 5,
+    };
+  }
+
+  double get minSameLaneVerticalGap {
+    return switch (difficulty) {
+      PianoDifficulty.basic => 280,
+      PianoDifficulty.medium => 240,
+      PianoDifficulty.hard => 210,
+    };
+  }
+
+  double get randomTileSpeed {
+    return switch (difficulty) {
+      PianoDifficulty.basic => 105 + random.nextDouble() * 30,
+      PianoDifficulty.medium => 120 + random.nextDouble() * 40,
+      PianoDifficulty.hard => 135 + random.nextDouble() * 45,
+    };
+  }
+
   @override
   Color backgroundColor() {
     return const Color(0xFF111827);
@@ -68,7 +100,7 @@ class PianoVisualGame extends FlameGame {
     elapsedSeconds += dt;
     spawnTimer += dt;
 
-    if (spawnTimer >= 1.0) {
+    if (spawnTimer >= spawnInterval) {
       spawnTimer = 0;
       spawnTile();
     }
@@ -79,7 +111,6 @@ class PianoVisualGame extends FlameGame {
 
     hasStarted = true;
 
-    spawnTile();
     spawnTile();
   }
 
@@ -145,20 +176,72 @@ class PianoVisualGame extends FlameGame {
     );
   }
 
+  List<PianoTileComponent> get activeTiles {
+    return children
+        .whereType<PianoTileComponent>()
+        .where((tile) => !tile.wasTouched && !tile.wasMissed)
+        .toList();
+  }
+
+  bool get hasActiveHoldTile {
+    return activeTiles.any((tile) => tile.kind == PianoTileKind.hold);
+  }
+
+  int? findAvailableLane() {
+    const columns = 4;
+
+    final lanes = List<int>.generate(columns, (index) => index);
+    lanes.shuffle(random);
+
+    for (final laneIndex in lanes) {
+      final laneTiles = activeTiles.where(
+        (tile) => tile.laneIndex == laneIndex,
+      );
+
+      var laneIsAvailable = true;
+
+      for (final tile in laneTiles) {
+        if (tile.y < minSameLaneVerticalGap) {
+          laneIsAvailable = false;
+          break;
+        }
+      }
+
+      if (laneIsAvailable) {
+        return laneIndex;
+      }
+    }
+
+    return null;
+  }
+
   void spawnTile() {
     if (isSessionFinished) return;
+
+    if (activeTiles.length >= maxActiveTiles) {
+      return;
+    }
 
     final levelConfig = difficulty.config;
 
     final channel = random.nextBool() ? VisualChannel.red : VisualChannel.green;
 
-    final kind = random.nextDouble() < levelConfig.holdTileProbability
+    var kind = random.nextDouble() < levelConfig.holdTileProbability
         ? PianoTileKind.hold
         : PianoTileKind.tap;
 
+    if (kind == PianoTileKind.hold && hasActiveHoldTile) {
+      kind = PianoTileKind.tap;
+    }
+
     const columns = 4;
     final columnWidth = size.x / columns;
-    final laneIndex = random.nextInt(columns);
+
+    final laneIndex = findAvailableLane();
+
+    if (laneIndex == null) {
+      return;
+    }
 
     final requiredHoldSeconds = kind == PianoTileKind.hold
         ? levelConfig.randomHoldSeconds(random)
@@ -177,7 +260,7 @@ class PianoVisualGame extends FlameGame {
       channel: channel,
       kind: kind,
       laneIndex: laneIndex,
-      speed: 120 + random.nextDouble() * 45,
+      speed: randomTileSpeed,
       createdAtSeconds: elapsedSeconds,
       requiredHoldSeconds: requiredHoldSeconds,
       color: _colorForChannel(channel),
