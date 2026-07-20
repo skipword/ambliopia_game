@@ -1,110 +1,323 @@
+import 'dart:async';
+
+import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../app/app_routes.dart';
 import '../../app/app_theme.dart';
+import '../../core/state/app_state.dart';
+import 'break_the_row_game.dart';
 import 'break_the_row_level.dart';
+import 'break_the_row_session_result.dart';
 
-class BreakTheRowScreen extends StatelessWidget {
+class BreakTheRowScreen extends StatefulWidget {
   const BreakTheRowScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  State<BreakTheRowScreen> createState() => _BreakTheRowScreenState();
+}
+
+class _BreakTheRowScreenState extends State<BreakTheRowScreen> {
+  BreakTheRowGame? game;
+  bool initialized = false;
+
+  int? countdownValue = 3;
+  Timer? countdownTimer;
+  Timer? hideCountdownTimer;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (initialized) return;
+
+    final appState = context.read<AppState>();
+
     final difficulty =
         ModalRoute.of(context)?.settings.arguments as BreakTheRowDifficulty? ??
         BreakTheRowDifficulty.basic;
 
-    final config = difficulty.config;
+    game = BreakTheRowGame(
+      difficulty: difficulty,
+      redContrast: appState.redContrast,
+      greenContrast: appState.greenContrast,
+      onSessionFinished: goToResults,
+    );
+
+    initialized = true;
+    startCountdown();
+  }
+
+  void startCountdown() {
+    countdownTimer?.cancel();
+
+    countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
+
+      final current = countdownValue ?? 0;
+
+      if (current > 1) {
+        setState(() {
+          countdownValue = current - 1;
+        });
+        return;
+      }
+
+      timer.cancel();
+
+      setState(() {
+        countdownValue = 0;
+      });
+
+      game?.startGame();
+
+      hideCountdownTimer = Timer(const Duration(milliseconds: 650), () {
+        if (!mounted) return;
+
+        setState(() {
+          countdownValue = null;
+        });
+      });
+    });
+  }
+
+  void goToResults(BreakTheRowSessionResult result) {
+    Future.microtask(() {
+      if (!mounted) return;
+
+      Navigator.of(
+        context,
+      ).pushReplacementNamed(AppRoutes.breakTheRowResults, arguments: result);
+    });
+  }
+
+  void finishManually() {
+    final currentGame = game;
+    if (currentGame == null) return;
+
+    final result = currentGame.finishSession(BreakTheRowEndReason.manual);
+    goToResults(result);
+  }
+
+  @override
+  void dispose() {
+    countdownTimer?.cancel();
+    hideCountdownTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final currentGame = game;
+
+    if (currentGame == null) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF111827),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFF111827),
-      appBar: AppBar(
-        title: const Text('Rompe la Fila'),
-        backgroundColor: const Color(0xFF111827),
-        foregroundColor: Colors.white,
-      ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(22),
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      config.name,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                      ),
+        child: Stack(
+          children: [
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: currentGame.rotateCurrentPiece,
+              onHorizontalDragEnd: (details) {
+                final velocity = details.primaryVelocity ?? 0;
+
+                if (velocity < -250) {
+                  currentGame.moveLeft();
+                }
+
+                if (velocity > 250) {
+                  currentGame.moveRight();
+                }
+              },
+              onVerticalDragEnd: (details) {
+                final velocity = details.primaryVelocity ?? 0;
+
+                if (velocity > 350) {
+                  currentGame.fastDrop();
+                }
+              },
+              child: GameWidget(game: currentGame),
+            ),
+            Positioned(
+              top: 16,
+              left: 16,
+              right: 16,
+              child: ValueListenableBuilder<BreakTheRowStats>(
+                valueListenable: currentGame.stats,
+                builder: (context, stats, _) {
+                  final livesLeft =
+                      currentGame.config.maxLives - stats.livesLost;
+
+                  return Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.92),
+                      borderRadius: BorderRadius.circular(18),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Objetivo: ${config.targetLines} líneas · Vidas: ${config.maxLives}',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            IconButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                              icon: const Icon(Icons.close),
+                            ),
+                            const Expanded(
+                              child: Text(
+                                'Rompe la Fila',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: AppColors.navy,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 18,
+                                ),
+                              ),
+                            ),
+                            FilledButton(
+                              onPressed: stats.totalPieces == 0
+                                  ? null
+                                  : finishManually,
+                              child: const Text('Terminar'),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Líneas: ${stats.linesCompleted}/${currentGame.config.targetLines}',
+                                style: const TextStyle(
+                                  color: AppColors.navy,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ),
+                            Row(
+                              children: List.generate(
+                                currentGame.config.maxLives,
+                                (index) {
+                                  final lost = index >= livesLeft;
+
+                                  return Padding(
+                                    padding: const EdgeInsets.only(left: 4),
+                                    child: Icon(
+                                      lost
+                                          ? Icons.favorite_border
+                                          : Icons.favorite,
+                                      color: lost ? Colors.grey : AppColors.red,
+                                      size: 26,
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  );
+                },
               ),
-              const SizedBox(height: 24),
-              Expanded(
-                child: Center(
-                  child: AspectRatio(
-                    aspectRatio: config.boardColumns / config.boardRows,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(
-                          color: AppColors.cyan.withValues(alpha: 0.8),
-                          width: 3,
-                        ),
-                      ),
-                      child: CustomPaint(
-                        painter: _BoardPreviewPainter(
-                          columns: config.boardColumns,
-                          rows: config.boardRows,
-                        ),
-                      ),
-                    ),
+            ),
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 88,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.12),
+                  ),
+                ),
+                child: const Text(
+                  'Puedes usar los botones o probar gestos en pantalla',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                    height: 1.3,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
-              const Text(
-                'Aquí conectaremos el tablero real con Flame.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
+            ),
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 16,
+              child: Row(
                 children: [
-                  _ControlButton(icon: Icons.arrow_left, onTap: () {}),
+                  _ControlButton(
+                    icon: Icons.arrow_left,
+                    onTap: currentGame.moveLeft,
+                  ),
                   const SizedBox(width: 10),
-                  _ControlButton(icon: Icons.rotate_right, onTap: () {}),
+                  _ControlButton(
+                    icon: Icons.rotate_right,
+                    onTap: currentGame.rotateCurrentPiece,
+                  ),
                   const SizedBox(width: 10),
-                  _ControlButton(icon: Icons.arrow_right, onTap: () {}),
+                  _ControlButton(
+                    icon: Icons.arrow_right,
+                    onTap: currentGame.moveRight,
+                  ),
                   const SizedBox(width: 10),
                   _ControlButton(
                     icon: Icons.keyboard_double_arrow_down,
-                    onTap: () {},
+                    onTap: currentGame.fastDrop,
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+            if (countdownValue != null)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.45),
+                  child: Center(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 250),
+                      transitionBuilder: (child, animation) {
+                        return ScaleTransition(
+                          scale: animation,
+                          child: FadeTransition(
+                            opacity: animation,
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: Text(
+                        countdownValue == 0 ? '¡Vamos!' : '$countdownValue',
+                        key: ValueKey(countdownValue),
+                        style: TextStyle(
+                          color: countdownValue == 0
+                              ? AppColors.yellow
+                              : Colors.white,
+                          fontSize: countdownValue == 0 ? 58 : 82,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -122,40 +335,8 @@ class _ControlButton extends StatelessWidget {
     return Expanded(
       child: SizedBox(
         height: 58,
-        child: FilledButton(onPressed: onTap, child: Icon(icon, size: 32)),
+        child: FilledButton(onPressed: onTap, child: Icon(icon, size: 31)),
       ),
     );
-  }
-}
-
-class _BoardPreviewPainter extends CustomPainter {
-  const _BoardPreviewPainter({required this.columns, required this.rows});
-
-  final int columns;
-  final int rows;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final cellWidth = size.width / columns;
-    final cellHeight = size.height / rows;
-
-    final linePaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.12)
-      ..strokeWidth = 1;
-
-    for (int column = 1; column < columns; column++) {
-      final x = column * cellWidth;
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), linePaint);
-    }
-
-    for (int row = 1; row < rows; row++) {
-      final y = row * cellHeight;
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), linePaint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _BoardPreviewPainter oldDelegate) {
-    return oldDelegate.columns != columns || oldDelegate.rows != rows;
   }
 }
