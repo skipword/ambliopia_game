@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../app/app_routes.dart';
 import '../../app/app_theme.dart';
+import '../../core/models/clinical_session_summary.dart';
 import '../../core/state/app_state.dart';
 import 'piano_level.dart';
 import 'piano_session_result.dart';
@@ -21,6 +22,7 @@ class PianoVisualScreen extends StatefulWidget {
 class _PianoVisualScreenState extends State<PianoVisualScreen> {
   PianoVisualGame? game;
   bool initialized = false;
+  bool clinicalResultSaved = false;
 
   int? countdownValue = 3;
   Timer? countdownTimer;
@@ -84,7 +86,37 @@ class _PianoVisualScreenState extends State<PianoVisualScreen> {
     });
   }
 
+  void saveClinicalResult(PianoSessionResult result) {
+    if (clinicalResultSaved) return;
+
+    clinicalResultSaved = true;
+
+    context.read<AppState>().addClinicalSession(
+      ClinicalSessionSummary(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        gameType: ClinicalGameType.pianoVisual,
+        gameName: 'Piano Visual',
+        startedAt: result.startedAt,
+        endedAt: result.endedAt,
+        durationSeconds: result.durationSeconds,
+        score: result.stats.hits,
+        objectiveLabel: 'Estímulos respondidos',
+        completedObjective: result.stats.hits,
+        targetObjective: result.stats.total,
+        redSuccess: result.stats.redHits,
+        redErrors: result.stats.redMisses,
+        greenSuccess: result.stats.greenHits,
+        greenErrors: result.stats.greenMisses,
+        eventsCount: result.events.length,
+        observation: result.mainObservation,
+        averageReactionTimeMs: result.averageReactionTimeMs,
+      ),
+    );
+  }
+
   void goToResults(PianoSessionResult result) {
+    saveClinicalResult(result);
+
     Future.microtask(() {
       if (!mounted) return;
 
@@ -100,6 +132,18 @@ class _PianoVisualScreenState extends State<PianoVisualScreen> {
 
     final result = currentGame.finishSession(PianoEndReason.manual);
     goToResults(result);
+  }
+
+  void exitGame() {
+    final currentGame = game;
+
+    if (currentGame != null && currentGame.stats.value.total > 0) {
+      final result = currentGame.finishSession(PianoEndReason.manual);
+      goToResults(result);
+      return;
+    }
+
+    Navigator.of(context).pop();
   }
 
   @override
@@ -144,9 +188,7 @@ class _PianoVisualScreenState extends State<PianoVisualScreen> {
                         Row(
                           children: [
                             IconButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
+                              onPressed: exitGame,
                               icon: const Icon(Icons.close),
                             ),
                             const Expanded(

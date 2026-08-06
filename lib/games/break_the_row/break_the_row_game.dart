@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../../app/app_theme.dart';
 import 'break_the_row_level.dart';
 import 'break_the_row_session_result.dart';
+import 'package:flame_audio/flame_audio.dart';
 
 class BreakTheRowGame extends FlameGame {
   BreakTheRowGame({
@@ -19,6 +20,10 @@ class BreakTheRowGame extends FlameGame {
   final double redContrast;
   final double greenContrast;
   final void Function(BreakTheRowSessionResult result) onSessionFinished;
+  static const String backgroundMusic = 'break_the_row_music.mp3';
+  Future<void> loadAudio() async {
+    await FlameAudio.audioCache.load(backgroundMusic);
+  }
 
   late final BreakTheRowLevelConfig config = difficulty.config;
 
@@ -80,6 +85,13 @@ class BreakTheRowGame extends FlameGame {
   }
 
   @override
+  Future<void> onLoad() async {
+    await super.onLoad();
+
+    await loadAudio();
+  }
+
+  @override
   void update(double dt) {
     super.update(dt);
 
@@ -113,6 +125,10 @@ class BreakTheRowGame extends FlameGame {
     if (hasStarted) return;
 
     hasStarted = true;
+
+    FlameAudio.bgm.initialize();
+    FlameAudio.bgm.play(backgroundMusic, volume: 0.30);
+
     spawnPiece();
   }
 
@@ -409,7 +425,7 @@ class BreakTheRowGame extends FlameGame {
     if (_finalResult != null) return _finalResult!;
 
     isSessionFinished = true;
-
+    FlameAudio.bgm.stop();
     pauseEngine();
 
     _finalResult = BreakTheRowSessionResult(

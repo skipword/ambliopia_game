@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/eye.dart';
 import '../models/patient.dart';
+import '../models/clinical_session_summary.dart';
 
 class AppState extends ChangeNotifier {
   Patient? _patient;
@@ -33,6 +34,8 @@ class AppState extends ChangeNotifier {
   bool get hasPatientData => _patient != null;
 
   bool get hasOcularConfiguration => _amblyopicEye != null;
+
+  final List<ClinicalSessionSummary> _clinicalSessions = [];
 
   void setPatient({
     required String code,
@@ -94,5 +97,19 @@ class AppState extends ChangeNotifier {
     }
 
     return '${currentPatient.code} · ${currentPatient.age} años';
+  }
+
+  List<ClinicalSessionSummary> get clinicalSessions {
+    return List.unmodifiable(_clinicalSessions.reversed);
+  }
+
+  ClinicalSessionSummary? get latestClinicalSession {
+    if (_clinicalSessions.isEmpty) return null;
+    return _clinicalSessions.last;
+  }
+
+  void addClinicalSession(ClinicalSessionSummary summary) {
+    _clinicalSessions.add(summary);
+    notifyListeners();
   }
 }

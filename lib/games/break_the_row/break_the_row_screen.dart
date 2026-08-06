@@ -10,6 +10,7 @@ import '../../core/state/app_state.dart';
 import 'break_the_row_game.dart';
 import 'break_the_row_level.dart';
 import 'break_the_row_session_result.dart';
+import '../../core/models/clinical_session_summary.dart';
 
 class BreakTheRowScreen extends StatefulWidget {
   const BreakTheRowScreen({super.key});
@@ -49,6 +50,65 @@ class _BreakTheRowScreenState extends State<BreakTheRowScreen> {
     startCountdown();
   }
 
+  void saveClinicalResult(BreakTheRowSessionResult result) {
+    final redTotal =
+        result.stats.redPiecesPlaced + result.stats.redPiecesFailed;
+    final greenTotal =
+        result.stats.greenPiecesPlaced + result.stats.greenPiecesFailed;
+
+    final redRate = redTotal == 0 ? 0 : result.stats.redPiecesPlaced / redTotal;
+    final greenRate = greenTotal == 0
+        ? 0
+        : result.stats.greenPiecesPlaced / greenTotal;
+
+    String observation;
+
+    if (redTotal < 3 || greenTotal < 3) {
+      observation =
+          'La sesión tiene pocos datos para comparar estímulos rojo y verde.';
+    } else if ((redRate - greenRate).abs() < 0.10) {
+      observation =
+          'El rendimiento fue similar entre estímulos rojos y verdes.';
+    } else if (redRate < greenRate) {
+      observation =
+          'Se observó mayor dificultad en estímulos rojos durante la sesión.';
+    } else {
+      observation =
+          'Se observó mayor dificultad en estímulos verdes durante la sesión.';
+    }
+
+    context.read<AppState>().addClinicalSession(
+      ClinicalSessionSummary(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        gameType: ClinicalGameType.breakTheRow,
+        gameName: 'Rompe la Fila',
+        startedAt: result.startedAt,
+        endedAt: result.endedAt,
+        durationSeconds: result.durationSeconds,
+        score: result.stats.score,
+        objectiveLabel: 'Líneas completadas',
+        completedObjective: result.stats.linesCompleted,
+        targetObjective: game?.config.targetLines ?? 0,
+        redSuccess: result.stats.redPiecesPlaced,
+        redErrors: result.stats.redPiecesFailed,
+        greenSuccess: result.stats.greenPiecesPlaced,
+        greenErrors: result.stats.greenPiecesFailed,
+        eventsCount: result.events.length,
+        observation: observation,
+      ),
+    );
+  }
+
+  void exitGame() {
+    final currentGame = game;
+
+    if (currentGame != null && currentGame.hasStarted) {
+      currentGame.finishSession(BreakTheRowEndReason.manual);
+    }
+
+    Navigator.of(context).pop();
+  }
+
   void startCountdown() {
     countdownTimer?.cancel();
 
@@ -83,6 +143,8 @@ class _BreakTheRowScreenState extends State<BreakTheRowScreen> {
   }
 
   void goToResults(BreakTheRowSessionResult result) {
+    saveClinicalResult(result);
+
     Future.microtask(() {
       if (!mounted) return;
 
@@ -167,9 +229,7 @@ class _BreakTheRowScreenState extends State<BreakTheRowScreen> {
                         Row(
                           children: [
                             IconButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
+                              onPressed: exitGame,
                               icon: const Icon(Icons.close),
                             ),
                             const Expanded(

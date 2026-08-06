@@ -24,3 +24,4 @@ flutter:
   assets:
     - assets/audio/piano_hit.wav
     - assets/audio/piano_miss.wav
+    - assets/audio/break_the_row_music.mp3

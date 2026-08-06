@@ -16,4 +16,6 @@ class AppRoutes {
   static const breakTheRowPreparation = '/games/break-the-row/preparation';
   static const breakTheRow = '/games/break-the-row';
   static const breakTheRowResults = '/games/break-the-row/results';
+
+  static const doctorResults = '/doctor/results';
 }

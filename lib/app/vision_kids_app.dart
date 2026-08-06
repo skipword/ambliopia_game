@@ -18,6 +18,7 @@ import 'app_theme.dart';
 import '../games/break_the_row/break_the_row_preparation_screen.dart';
 import '../games/break_the_row/break_the_row_results_screen.dart';
 import '../games/break_the_row/break_the_row_screen.dart';
+import '../features/doctor_results/doctor_results_screen.dart';
 
 class VisionKidsApp extends StatelessWidget {
   const VisionKidsApp({super.key});
@@ -48,6 +49,8 @@ class VisionKidsApp extends StatelessWidget {
             const BreakTheRowPreparationScreen(),
         AppRoutes.breakTheRow: (_) => const BreakTheRowScreen(),
         AppRoutes.breakTheRowResults: (_) => const BreakTheRowResultsScreen(),
+
+        AppRoutes.doctorResults: (_) => const DoctorResultsScreen(),
       },
     );
   }

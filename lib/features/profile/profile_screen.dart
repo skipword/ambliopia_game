@@ -52,7 +52,10 @@ class ProfileScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
           children: [
-            Text('Perfil', style: Theme.of(context).textTheme.headlineMedium),
+            Text(
+              'Perfil',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
             const SizedBox(height: 8),
             const Text(
               'Información del paciente y configuración visual.',
@@ -75,7 +78,11 @@ class ProfileScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  const Icon(Icons.person, color: Colors.white, size: 64),
+                  const Icon(
+                    Icons.person,
+                    color: Colors.white,
+                    size: 64,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     patient?.name ?? 'Paciente',
@@ -118,6 +125,12 @@ class ProfileScreen extends StatelessWidget {
                 ],
               ),
             ),
+
+            const SizedBox(height: 24),
+
+            _SectionTitle(title: 'Panel adulto'),
+            const SizedBox(height: 14),
+            const _DoctorResultsAccessCard(),
 
             const SizedBox(height: 24),
 
@@ -213,11 +226,15 @@ class ProfileScreen extends StatelessWidget {
               child: const Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.info_outline, color: AppColors.cyan, size: 30),
+                  Icon(
+                    Icons.info_outline,
+                    color: AppColors.cyan,
+                    size: 30,
+                  ),
                   SizedBox(width: 14),
                   Expanded(
                     child: Text(
-                      'Más adelante aquí podremos agregar historial de sesiones y resultados técnicos para el adulto responsable.',
+                      'El panel clínico está pensado para el adulto responsable o profesional. El niño debe ver principalmente los juegos y resultados simples.',
                       style: TextStyle(
                         color: AppColors.navy,
                         fontSize: 15,
@@ -246,7 +263,107 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(title, style: Theme.of(context).textTheme.titleLarge);
+    return Text(
+      title,
+      style: Theme.of(context).textTheme.titleLarge,
+    );
+  }
+}
+
+class _DoctorResultsAccessCard extends StatelessWidget {
+  const _DoctorResultsAccessCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(26),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  color: AppColors.cyan.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Icon(
+                  Icons.monitor_heart_outlined,
+                  color: AppColors.cyan,
+                  size: 32,
+                ),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Panel clínico',
+                      style: TextStyle(
+                        color: AppColors.navy,
+                        fontSize: 19,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Vista para adulto o profesional',
+                      style: TextStyle(
+                        color: AppColors.textMuted,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Consulta el tiempo de terapia, partidas realizadas y estadísticas específicas de los juegos.',
+            style: TextStyle(
+              color: AppColors.textMuted,
+              fontSize: 15,
+              height: 1.4,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 18),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: FilledButton.icon(
+              onPressed: () {
+                Navigator.of(context).pushNamed(AppRoutes.doctorResults);
+              },
+              icon: const Icon(Icons.analytics_outlined),
+              label: const Text(
+                'Ver resultados clínicos',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -284,7 +401,11 @@ class _InfoCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, color: iconColor, size: 32),
+              Icon(
+                icon,
+                color: iconColor,
+                size: 32,
+              ),
               const SizedBox(width: 14),
               Expanded(
                 child: Text(
@@ -321,7 +442,11 @@ class _InfoRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(Icons.circle, color: color, size: 18),
+        Icon(
+          Icons.circle,
+          color: color,
+          size: 18,
+        ),
         const SizedBox(width: 12),
         Expanded(
           child: Text(
@@ -354,7 +479,11 @@ class _ContrastRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(Icons.circle, color: color, size: 18),
+        Icon(
+          Icons.circle,
+          color: color,
+          size: 18,
+        ),
         const SizedBox(width: 12),
         Expanded(
           child: Text(
@@ -419,7 +548,9 @@ class _EditNameDialogState extends State<_EditNameDialog> {
       content: TextField(
         controller: controller,
         autofocus: true,
-        decoration: const InputDecoration(labelText: 'Nombre del paciente'),
+        decoration: const InputDecoration(
+          labelText: 'Nombre del paciente',
+        ),
         onSubmitted: (_) {
           save();
         },
@@ -431,7 +562,10 @@ class _EditNameDialogState extends State<_EditNameDialog> {
           },
           child: const Text('Cancelar'),
         ),
-        FilledButton(onPressed: save, child: const Text('Guardar')),
+        FilledButton(
+          onPressed: save,
+          child: const Text('Guardar'),
+        ),
       ],
     );
   }
