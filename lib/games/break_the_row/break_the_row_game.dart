@@ -713,8 +713,8 @@ class BreakTheRowGame extends FlameGame {
 
     final borderPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = highlighted ? 3 : 1.5
-      ..color = Colors.white.withValues(alpha: highlighted ? 0.85 : 0.35);
+      ..strokeWidth = highlighted ? 2.5 : 1.5
+      ..color = color;
 
     canvas.drawRRect(rrect, borderPaint);
   }
@@ -746,8 +746,8 @@ class BreakTheRowGame extends FlameGame {
 
     final borderPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = highlighted ? 3 : 1.5
-      ..color = Colors.white.withValues(alpha: highlighted ? 0.75 : 0.30);
+      ..strokeWidth = highlighted ? 2.5 : 1.5
+      ..color = color;
 
     canvas.drawRRect(rrect, borderPaint);
   }

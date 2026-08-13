@@ -4,11 +4,14 @@ import 'package:provider/provider.dart';
 import 'app/vision_kids_app.dart';
 import 'core/state/app_state.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final appState = AppState();
+
+  await appState.loadSavedState();
+
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => AppState(),
-      child: const VisionKidsApp(),
-    ),
+    ChangeNotifierProvider.value(value: appState, child: const VisionKidsApp()),
   );
 }

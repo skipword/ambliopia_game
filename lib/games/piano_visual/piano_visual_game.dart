@@ -118,22 +118,6 @@ class PianoVisualGame extends FlameGame {
     const columns = 4;
     final columnWidth = size.x / columns;
 
-    for (int i = 0; i < columns; i++) {
-      final x = i * columnWidth;
-
-      add(
-        RectangleComponent(
-          position: Vector2(x, 0),
-          size: Vector2(columnWidth, size.y),
-          paint: Paint()
-            ..color = i.isEven
-                ? Colors.white.withValues(alpha: 0.035)
-                : Colors.white.withValues(alpha: 0.015),
-          priority: -3,
-        ),
-      );
-    }
-
     for (int i = 1; i < columns; i++) {
       final x = i * columnWidth;
 
@@ -141,7 +125,7 @@ class PianoVisualGame extends FlameGame {
         RectangleComponent(
           position: Vector2(x - 1, 0),
           size: Vector2(2, size.y),
-          paint: Paint()..color = Colors.white.withValues(alpha: 0.18),
+          paint: Paint()..color = Colors.white.withValues(alpha: 0.08),
           priority: -2,
         ),
       );
@@ -488,23 +472,17 @@ class PianoTileComponent extends PositionComponent
     final radius = Radius.circular(kind == PianoTileKind.hold ? 26 : 20);
     final rrect = RRect.fromRectAndRadius(rect, radius);
 
-    final glowPaint = Paint()
-      ..color = baseColor.withValues(alpha: 0.22)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
-
-    canvas.drawRRect(rrect.inflate(5), glowPaint);
-
-    final tilePaint = Paint()
-      ..color = isHolding
-          ? Color.lerp(baseColor, Colors.white, holdProgress * 0.30)!
-          : baseColor;
+    // Importante:
+    // No usamos blanco en la ficha, porque el blanco se ve por ambos ojos.
+    // El estímulo debe depender solo del canal rojo o verde.
+    final tilePaint = Paint()..color = baseColor;
 
     canvas.drawRRect(rrect, tilePaint);
 
     final borderPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 3
-      ..color = Colors.white.withValues(alpha: 0.55);
+      ..strokeWidth = 2.5
+      ..color = baseColor;
 
     canvas.drawRRect(rrect, borderPaint);
 
@@ -523,10 +501,13 @@ class PianoTileComponent extends PositionComponent
     final trackBottom = size.y - bottomPadding;
     final trackHeight = trackBottom - trackTop;
 
+    // Usamos negro semitransparente sobre la ficha.
+    // Si la ficha se camufla con las gafas, este indicador no queda visible
+    // como pasaba con el blanco.
     final trackPaint = Paint()
       ..strokeWidth = 6
       ..strokeCap = StrokeCap.round
-      ..color = Colors.white.withValues(alpha: 0.35);
+      ..color = Colors.black.withValues(alpha: 0.28);
 
     canvas.drawLine(
       Offset(trackX, trackTop),
@@ -537,7 +518,7 @@ class PianoTileComponent extends PositionComponent
     final progressPaint = Paint()
       ..strokeWidth = 8
       ..strokeCap = StrokeCap.round
-      ..color = Colors.white.withValues(alpha: 0.95);
+      ..color = Colors.black.withValues(alpha: 0.55);
 
     canvas.drawLine(
       Offset(trackX, trackBottom),
@@ -551,7 +532,7 @@ class PianoTileComponent extends PositionComponent
     final circleBackground = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 5
-      ..color = Colors.white.withValues(alpha: 0.35);
+      ..color = Colors.black.withValues(alpha: 0.28);
 
     canvas.drawCircle(circleCenter, circleRadius, circleBackground);
 
@@ -559,7 +540,7 @@ class PianoTileComponent extends PositionComponent
       ..style = PaintingStyle.stroke
       ..strokeWidth = 6
       ..strokeCap = StrokeCap.round
-      ..color = Colors.white;
+      ..color = Colors.black.withValues(alpha: 0.55);
 
     canvas.drawArc(
       Rect.fromCircle(center: circleCenter, radius: circleRadius),
@@ -567,26 +548,6 @@ class PianoTileComponent extends PositionComponent
       2 * pi * progress,
       false,
       circleProgress,
-    );
-
-    final holdText = TextPainter(
-      text: const TextSpan(
-        text: 'MANTÉN',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 16,
-          fontWeight: FontWeight.w900,
-        ),
-      ),
-      textAlign: TextAlign.center,
-      textDirection: TextDirection.ltr,
-    );
-
-    holdText.layout(maxWidth: size.x);
-
-    holdText.paint(
-      canvas,
-      Offset((size.x - holdText.width) / 2, size.y * 0.35),
     );
   }
 

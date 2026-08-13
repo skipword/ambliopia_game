@@ -52,10 +52,7 @@ class ProfileScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
           children: [
-            Text(
-              'Perfil',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
+            Text('Perfil', style: Theme.of(context).textTheme.headlineMedium),
             const SizedBox(height: 8),
             const Text(
               'Información del paciente y configuración visual.',
@@ -78,11 +75,7 @@ class ProfileScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  const Icon(
-                    Icons.person,
-                    color: Colors.white,
-                    size: 64,
-                  ),
+                  const Icon(Icons.person, color: Colors.white, size: 64),
                   const SizedBox(height: 16),
                   Text(
                     patient?.name ?? 'Paciente',
@@ -226,11 +219,7 @@ class ProfileScreen extends StatelessWidget {
               child: const Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.info_outline,
-                    color: AppColors.cyan,
-                    size: 30,
-                  ),
+                  Icon(Icons.info_outline, color: AppColors.cyan, size: 30),
                   SizedBox(width: 14),
                   Expanded(
                     child: Text(
@@ -263,10 +252,7 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: Theme.of(context).textTheme.titleLarge,
-    );
+    return Text(title, style: Theme.of(context).textTheme.titleLarge);
   }
 }
 
@@ -355,9 +341,7 @@ class _DoctorResultsAccessCard extends StatelessWidget {
               icon: const Icon(Icons.analytics_outlined),
               label: const Text(
                 'Ver resultados clínicos',
-                style: TextStyle(
-                  fontWeight: FontWeight.w900,
-                ),
+                style: TextStyle(fontWeight: FontWeight.w900),
               ),
             ),
           ),
@@ -401,11 +385,7 @@ class _InfoCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                icon,
-                color: iconColor,
-                size: 32,
-              ),
+              Icon(icon, color: iconColor, size: 32),
               const SizedBox(width: 14),
               Expanded(
                 child: Text(
@@ -442,11 +422,7 @@ class _InfoRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(
-          Icons.circle,
-          color: color,
-          size: 18,
-        ),
+        Icon(Icons.circle, color: color, size: 18),
         const SizedBox(width: 12),
         Expanded(
           child: Text(
@@ -479,11 +455,7 @@ class _ContrastRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(
-          Icons.circle,
-          color: color,
-          size: 18,
-        ),
+        Icon(Icons.circle, color: color, size: 18),
         const SizedBox(width: 12),
         Expanded(
           child: Text(
@@ -548,9 +520,7 @@ class _EditNameDialogState extends State<_EditNameDialog> {
       content: TextField(
         controller: controller,
         autofocus: true,
-        decoration: const InputDecoration(
-          labelText: 'Nombre del paciente',
-        ),
+        decoration: const InputDecoration(labelText: 'Nombre del paciente'),
         onSubmitted: (_) {
           save();
         },
@@ -562,10 +532,7 @@ class _EditNameDialogState extends State<_EditNameDialog> {
           },
           child: const Text('Cancelar'),
         ),
-        FilledButton(
-          onPressed: save,
-          child: const Text('Guardar'),
-        ),
+        FilledButton(onPressed: save, child: const Text('Guardar')),
       ],
     );
   }
