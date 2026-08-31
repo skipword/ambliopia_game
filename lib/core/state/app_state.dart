@@ -2,16 +2,19 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../database/app_database.dart';
 import '../models/clinical_session_summary.dart';
 import '../models/eye.dart';
 import '../models/patient.dart';
 import '../storage/app_preferences.dart';
 
 class AppState extends ChangeNotifier {
-  AppState({AppPreferences? preferences})
-    : _preferences = preferences ?? AppPreferences();
+  AppState({AppPreferences? preferences, AppDatabase? database})
+    : _preferences = preferences ?? AppPreferences(),
+      _database = database ?? AppDatabase();
 
   final AppPreferences _preferences;
+  final AppDatabase _database;
 
   Patient? _patient;
   Eye? _amblyopicEye;
@@ -56,6 +59,11 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> loadSavedState() async {
+    await _loadBasicState();
+    await _loadClinicalSessions();
+  }
+
+  Future<void> _loadBasicState() async {
     try {
       final savedData = await _preferences.load();
 
@@ -69,7 +77,26 @@ class AppState extends ChangeNotifier {
 
       notifyListeners();
     } catch (error) {
-      debugPrint('No fue posible cargar los datos guardados: $error');
+      debugPrint('No fue posible cargar los datos básicos guardados: $error');
+    }
+  }
+
+  Future<void> _loadClinicalSessions() async {
+    try {
+      final savedSessions = await _database.getClinicalSummaries();
+
+      _clinicalSessions.clear();
+
+      // La base devuelve primero las más recientes.
+      // Internamente las guardamos en orden cronológico
+      // porque el getter ya las invierte para mostrarlas.
+      _clinicalSessions.addAll(savedSessions.reversed);
+
+      notifyListeners();
+
+      debugPrint('Sesiones clínicas cargadas: ${_clinicalSessions.length}');
+    } catch (error) {
+      debugPrint('No fue posible cargar las sesiones clínicas: $error');
     }
   }
 
@@ -83,7 +110,7 @@ class AppState extends ChangeNotifier {
         greenContrast: _greenContrast,
       );
     } catch (error) {
-      debugPrint('No fue posible guardar los datos: $error');
+      debugPrint('No fue posible guardar los datos básicos: $error');
     }
   }
 
@@ -106,7 +133,8 @@ class AppState extends ChangeNotifier {
   void setAmblyopicEye(Eye eye) {
     _amblyopicEye = eye;
 
-    // Si cambia el ojo configurado, debe repetirse la calibración.
+    // Si cambia el ojo configurado,
+    // debe repetirse la calibración.
     _hasCompletedCalibration = false;
 
     notifyListeners();
@@ -135,7 +163,6 @@ class AppState extends ChangeNotifier {
 
     notifyListeners();
 
-    // Aquí se guardan también los contrastes definitivos.
     unawaited(_saveBasicState());
   }
 
@@ -165,6 +192,18 @@ class AppState extends ChangeNotifier {
     _clinicalSessions.add(summary);
 
     notifyListeners();
+
+    unawaited(_saveClinicalSession(summary));
+  }
+
+  Future<void> _saveClinicalSession(ClinicalSessionSummary summary) async {
+    try {
+      await _database.saveClinicalSummary(summary);
+
+      debugPrint('Sesión clínica guardada: ${summary.gameName}');
+    } catch (error) {
+      debugPrint('No fue posible guardar la sesión clínica: $error');
+    }
   }
 
   Future<void> clearSavedBasicData() async {
@@ -179,5 +218,20 @@ class AppState extends ChangeNotifier {
     _greenContrast = 0.7;
 
     notifyListeners();
+  }
+
+  Future<void> clearClinicalSessions() async {
+    await _database.deleteAllClinicalSessions();
+
+    _clinicalSessions.clear();
+
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    unawaited(_database.close());
+
+    super.dispose();
   }
 }

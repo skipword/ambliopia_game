@@ -7,6 +7,8 @@ environment:
   sdk: ^3.12.2
 
 dependencies:
+  drift: ^2.34.3
+  drift_flutter: ^0.3.1
   flame: ^1.37.0
   flame_audio: ^2.12.1
   flutter:
@@ -18,6 +20,8 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  drift_dev: ^2.34.5
+  build_runner: ^2.15.1
 
 flutter:
   uses-material-design: true
