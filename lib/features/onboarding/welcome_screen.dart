@@ -10,6 +10,10 @@ class WelcomeScreen extends StatelessWidget {
     Navigator.of(context).pushNamed(AppRoutes.patientData);
   }
 
+  void openProfessionalArea(BuildContext context) {
+    Navigator.of(context).pushNamed(AppRoutes.doctorPatients);
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
@@ -115,18 +119,39 @@ class WelcomeScreen extends StatelessWidget {
       ),
       bottomNavigationBar: SafeArea(
         minimum: const EdgeInsets.fromLTRB(24, 8, 24, 16),
-        child: SizedBox(
-          width: double.infinity,
-          height: 58,
-          child: FilledButton(
-            onPressed: () {
-              startSession(context);
-            },
-            child: const Text(
-              'Comenzar sesión',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: double.infinity,
+              height: 58,
+              child: FilledButton.icon(
+                onPressed: () {
+                  startSession(context);
+                },
+                icon: const Icon(Icons.sports_esports_rounded),
+                label: const Text(
+                  'Comenzar sesión',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                ),
+              ),
             ),
-          ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  openProfessionalArea(context);
+                },
+                icon: const Icon(Icons.medical_services_outlined),
+                label: const Text(
+                  'Área profesional',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

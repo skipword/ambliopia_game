@@ -77,9 +77,15 @@ class _BreakTheRowScreenState extends State<BreakTheRowScreen> {
           'Se observó mayor dificultad en estímulos verdes durante la sesión.';
     }
 
+    final appState = context.read<AppState>();
+    final patient = appState.patient;
+
+    if (patient == null) return;
+
     context.read<AppState>().addClinicalSession(
       ClinicalSessionSummary(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
+        patientId: patient.code,
         gameType: ClinicalGameType.breakTheRow,
         gameName: 'Rompe la Fila',
         startedAt: result.startedAt,

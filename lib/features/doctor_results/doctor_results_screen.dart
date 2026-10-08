@@ -4,16 +4,29 @@ import 'package:provider/provider.dart';
 import '../../app/app_theme.dart';
 import '../../core/models/clinical_session_summary.dart';
 import '../../core/state/app_state.dart';
+import '../../core/models/patient.dart';
 
 class DoctorResultsScreen extends StatelessWidget {
-  const DoctorResultsScreen({super.key});
+  const DoctorResultsScreen({super.key, required this.patient});
+
+  final Patient patient;
 
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
-    final sessions = appState.clinicalSessions;
-    final groupedSessions = _groupSessionsByDateAndGame(sessions);
-    final weeklySummary = _buildWeeklySummary(sessions);
+
+    final sessions = appState.clinicalSessions
+        .where((session) => session.patientId == patient.code)
+        .toList();
+
+    final now = DateTime.now();
+    final periodStart = DateTime(now.year, now.month - 3, now.day);
+
+    final weeklyGroups = _buildWeeklyGroups(
+      sessions: sessions,
+      periodStart: periodStart,
+      periodEnd: now,
+    );
 
     return Scaffold(
       appBar: AppBar(title: const Text('Resultados clínicos')),
@@ -22,27 +35,41 @@ class DoctorResultsScreen extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
           children: [
             _PatientHeader(
-              patientName: appState.patient?.name ?? 'Paciente sin registrar',
-              patientSubtitle: appState.patientSubtitle,
+              patientName: patient.name,
+              patientSubtitle: '${patient.code} · ${patient.age} años',
             ),
             const SizedBox(height: 20),
+
+            _PeriodCard(startDate: periodStart, endDate: now),
+
+            const SizedBox(height: 20),
+
             if (sessions.isEmpty)
               const _EmptyResultsCard()
             else ...[
-              _WeeklySummaryCard(summary: weeklySummary),
-              const SizedBox(height: 20),
               Text(
-                'Detalle por juego',
+                'Evolución semanal',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   color: AppColors.navy,
                   fontWeight: FontWeight.w900,
                 ),
               ),
-              const SizedBox(height: 12),
-              ...groupedSessions.map(
-                (group) => Padding(
+              const SizedBox(height: 6),
+              const Text(
+                'Información agrupada por semanas durante los últimos 3 meses.',
+                style: TextStyle(
+                  color: AppColors.textMuted,
+                  fontSize: 14,
+                  height: 1.4,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              ...weeklyGroups.map(
+                (week) => Padding(
                   padding: const EdgeInsets.only(bottom: 14),
-                  child: _GameSessionCard(group: group),
+                  child: _WeeklyClinicalCard(group: week),
                 ),
               ),
             ],
@@ -52,131 +79,66 @@ class DoctorResultsScreen extends StatelessWidget {
     );
   }
 
-  List<_GroupedGameSession> _groupSessionsByDateAndGame(
-    List<ClinicalSessionSummary> sessions,
-  ) {
-    final groups = <String, _GroupedGameSession>{};
+  List<_WeeklyClinicalGroup> _buildWeeklyGroups({
+    required List<ClinicalSessionSummary> sessions,
+    required DateTime periodStart,
+    required DateTime periodEnd,
+  }) {
+    final cleanPeriodStart = DateTime(
+      periodStart.year,
+      periodStart.month,
+      periodStart.day,
+    );
 
-    for (final session in sessions) {
-      final dateKey = _dateKey(session.startedAt);
-      final key = '$dateKey-${session.gameName}';
+    final cleanPeriodEnd = DateTime(
+      periodEnd.year,
+      periodEnd.month,
+      periodEnd.day,
+    );
 
-      final current = groups[key];
+    final firstWeekStart = _startOfWeek(cleanPeriodStart);
+    final lastWeekStart = _startOfWeek(cleanPeriodEnd);
 
-      if (current == null) {
-        groups[key] = _GroupedGameSession(
-          date: DateTime(
-            session.startedAt.year,
-            session.startedAt.month,
-            session.startedAt.day,
-          ),
-          gameName: session.gameName,
-          totalDurationSeconds: session.durationSeconds,
-          playedRounds: 1,
-          redSuccess: session.redSuccess,
-          redErrors: session.redErrors,
-          greenSuccess: session.greenSuccess,
-          greenErrors: session.greenErrors,
-          averageReactionTimeMs: session.averageReactionTimeMs,
-          observation: session.observation,
+    final result = <_WeeklyClinicalGroup>[];
+
+    DateTime currentWeekStart = lastWeekStart;
+
+    while (!currentWeekStart.isBefore(firstWeekStart)) {
+      final currentWeekEnd = currentWeekStart.add(const Duration(days: 6));
+
+      final weekSessions = sessions.where((session) {
+        final sessionDate = DateTime(
+          session.startedAt.year,
+          session.startedAt.month,
+          session.startedAt.day,
         );
-      } else {
-        final currentReaction = current.averageReactionTimeMs;
-        final newReaction = session.averageReactionTimeMs;
 
-        double? averageReaction;
+        return !sessionDate.isBefore(currentWeekStart) &&
+            !sessionDate.isAfter(currentWeekEnd) &&
+            !sessionDate.isBefore(cleanPeriodStart) &&
+            !sessionDate.isAfter(cleanPeriodEnd);
+      }).toList();
 
-        if (currentReaction == null && newReaction == null) {
-          averageReaction = null;
-        } else if (currentReaction == null) {
-          averageReaction = newReaction;
-        } else if (newReaction == null) {
-          averageReaction = currentReaction;
-        } else {
-          averageReaction =
-              ((currentReaction * current.playedRounds) + newReaction) /
-              (current.playedRounds + 1);
-        }
+      result.add(
+        _WeeklyClinicalGroup(
+          startDate: currentWeekStart,
+          endDate: currentWeekEnd,
+          sessions: weekSessions,
+        ),
+      );
 
-        groups[key] = current.copyWith(
-          totalDurationSeconds:
-              current.totalDurationSeconds + session.durationSeconds,
-          playedRounds: current.playedRounds + 1,
-          redSuccess: current.redSuccess + session.redSuccess,
-          redErrors: current.redErrors + session.redErrors,
-          greenSuccess: current.greenSuccess + session.greenSuccess,
-          greenErrors: current.greenErrors + session.greenErrors,
-          averageReactionTimeMs: averageReaction,
-          observation: session.observation,
-        );
-      }
+      currentWeekStart = currentWeekStart.subtract(const Duration(days: 7));
     }
-
-    final result = groups.values.toList();
-
-    result.sort((a, b) {
-      final dateComparison = b.date.compareTo(a.date);
-      if (dateComparison != 0) return dateComparison;
-      return a.gameName.compareTo(b.gameName);
-    });
 
     return result;
   }
 
-  _WeeklySummary _buildWeeklySummary(List<ClinicalSessionSummary> sessions) {
-    final now = DateTime.now();
+  DateTime _startOfWeek(DateTime date) {
+    final cleanDate = DateTime(date.year, date.month, date.day);
 
-    final startOfWeek = DateTime(
-      now.year,
-      now.month,
-      now.day,
-    ).subtract(Duration(days: now.weekday - 1));
-
-    final endOfWeek = startOfWeek.add(const Duration(days: 7));
-
-    final weekSessions = sessions.where((session) {
-      return session.startedAt.isAfter(
-            startOfWeek.subtract(const Duration(seconds: 1)),
-          ) &&
-          session.startedAt.isBefore(endOfWeek);
-    }).toList();
-
-    final groupedByDay = <String>{};
-
-    for (final session in weekSessions) {
-      groupedByDay.add(_dateKey(session.startedAt));
-    }
-
-    final totalSeconds = weekSessions.fold<double>(
-      0,
-      (sum, session) => sum + session.durationSeconds,
+    return cleanDate.subtract(
+      Duration(days: cleanDate.weekday - DateTime.monday),
     );
-
-    final gamesCount = <String, int>{};
-
-    for (final session in weekSessions) {
-      gamesCount.update(
-        session.gameName,
-        (value) => value + 1,
-        ifAbsent: () => 1,
-      );
-    }
-
-    final therapySessionsCount = groupedByDay.length;
-    final averageSeconds = therapySessionsCount == 0
-        ? 0.0
-        : totalSeconds / therapySessionsCount;
-
-    return _WeeklySummary(
-      therapySessionsCount: therapySessionsCount,
-      totalDurationSeconds: totalSeconds,
-      averageDurationSeconds: averageSeconds,
-      gamesCount: gamesCount,
-    );
-  }
-
-  String _dateKey(DateTime date) {
-    return '${date.year}-${date.month}-${date.day}';
   }
 }
 
@@ -244,60 +206,61 @@ class _PatientHeader extends StatelessWidget {
   }
 }
 
-class _WeeklySummaryCard extends StatelessWidget {
-  const _WeeklySummaryCard({required this.summary});
+class _PeriodCard extends StatelessWidget {
+  const _PeriodCard({required this.startDate, required this.endDate});
 
-  final _WeeklySummary summary;
+  final DateTime startDate;
+  final DateTime endDate;
 
   @override
   Widget build(BuildContext context) {
-    final gamesText = summary.gamesCount.entries
-        .map((entry) {
-          return '${entry.key} (${entry.value} partidas)';
-        })
-        .join(', ');
-
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(24),
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Resumen de la semana',
-            style: TextStyle(
-              color: AppColors.navy,
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: AppColors.cyan.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(
+              Icons.date_range_outlined,
+              color: AppColors.cyan,
+              size: 28,
             ),
           ),
-          const SizedBox(height: 18),
-          _SummaryRow(
-            icon: Icons.event_available,
-            label: 'Sesiones realizadas',
-            value: '${summary.therapySessionsCount}',
-          ),
-          const SizedBox(height: 12),
-          _SummaryRow(
-            icon: Icons.timer,
-            label: 'Tiempo total de terapia',
-            value: _formatDuration(summary.totalDurationSeconds),
-          ),
-          const SizedBox(height: 12),
-          _SummaryRow(
-            icon: Icons.av_timer,
-            label: 'Tiempo promedio por sesión',
-            value: _formatDuration(summary.averageDurationSeconds),
-          ),
-          const SizedBox(height: 12),
-          _SummaryRow(
-            icon: Icons.sports_esports,
-            label: 'Juegos utilizados',
-            value: gamesText.isEmpty ? 'Sin datos' : gamesText,
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Periodo analizado',
+                  style: TextStyle(
+                    color: AppColors.textMuted,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${_formatLongDate(startDate)} - ${_formatLongDate(endDate)}',
+                  style: const TextStyle(
+                    color: AppColors.navy,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -305,68 +268,203 @@ class _WeeklySummaryCard extends StatelessWidget {
   }
 }
 
-class _GameSessionCard extends StatelessWidget {
-  const _GameSessionCard({required this.group});
+class _WeeklyClinicalCard extends StatelessWidget {
+  const _WeeklyClinicalCard({required this.group});
 
-  final _GroupedGameSession group;
+  final _WeeklyClinicalGroup group;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!group.hasActivity) {
+      return _EmptyWeekCard(group: group);
+    }
+
+    final gamesText = group.gamesCount.entries
+        .map((entry) => '${entry.key} (${entry.value})')
+        .join(', ');
+
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(26),
+      clipBehavior: Clip.antiAlias,
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          childrenPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+          title: Text(
+            _formatWeekRange(group.startDate, group.endDate),
+            style: const TextStyle(
+              color: AppColors.navy,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              '${group.activeDays} días con actividad · '
+              '${group.playedRounds} partidas',
+              style: const TextStyle(
+                color: AppColors.textMuted,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          children: [
+            const Divider(),
+            const SizedBox(height: 12),
+
+            _SummaryRow(
+              icon: Icons.event_available,
+              label: 'Días con actividad',
+              value: '${group.activeDays}',
+            ),
+
+            const SizedBox(height: 12),
+
+            _SummaryRow(
+              icon: Icons.sports_esports,
+              label: 'Partidas realizadas',
+              value: '${group.playedRounds}',
+            ),
+
+            const SizedBox(height: 12),
+
+            _SummaryRow(
+              icon: Icons.timer_outlined,
+              label: 'Tiempo total de terapia',
+              value: _formatDuration(group.totalDurationSeconds),
+            ),
+
+            const SizedBox(height: 12),
+
+            _SummaryRow(
+              icon: Icons.av_timer,
+              label: 'Promedio por día activo',
+              value: _formatDuration(group.averageDurationPerActiveDay),
+            ),
+
+            const SizedBox(height: 12),
+
+            _SummaryRow(
+              icon: Icons.grid_view_rounded,
+              label: 'Juegos utilizados',
+              value: gamesText,
+            ),
+
+            const SizedBox(height: 20),
+
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Detalle por juego',
+                style: TextStyle(
+                  color: AppColors.navy,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            ...group.gameGroups.map(
+              (gameGroup) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _WeeklyGameCard(group: gameGroup),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _WeeklyGameCard extends StatelessWidget {
+  const _WeeklyGameCard({required this.group});
+
+  final _WeeklyGameGroup group;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(26),
+        color: const Color(0xFFF7F8FC),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _DetailRow(label: 'Fecha', value: _formatDate(group.date)),
+          Text(
+            group.gameName,
+            style: const TextStyle(
+              color: AppColors.navy,
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
           const SizedBox(height: 12),
-          _DetailRow(label: 'Juego', value: group.gameName),
-          const SizedBox(height: 12),
+
+          _DetailRow(label: 'Partidas', value: '${group.playedRounds}'),
+
+          const SizedBox(height: 10),
+
           _DetailRow(
-            label: 'Tiempo de la sesión',
+            label: 'Tiempo total',
             value: _formatDuration(group.totalDurationSeconds),
           ),
-          const SizedBox(height: 12),
-          _DetailRow(
-            label: 'Partidas realizadas',
-            value: '${group.playedRounds}',
-          ),
+
           if (group.hasPianoStats) ...[
-            const SizedBox(height: 18),
+            const SizedBox(height: 16),
             const Divider(),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
+
             const Text(
               'Estadísticas de Piano Visual',
               style: TextStyle(
                 color: AppColors.navy,
-                fontSize: 16,
+                fontSize: 15,
                 fontWeight: FontWeight.w900,
               ),
             ),
-            const SizedBox(height: 14),
+
+            const SizedBox(height: 12),
+
             _DetailRow(label: 'Aciertos rojo', value: '${group.redSuccess}'),
-            const SizedBox(height: 10),
+
+            const SizedBox(height: 8),
+
             _DetailRow(label: 'Errores rojo', value: '${group.redErrors}'),
-            const SizedBox(height: 10),
+
+            const SizedBox(height: 8),
+
             _DetailRow(label: 'Aciertos verde', value: '${group.greenSuccess}'),
-            const SizedBox(height: 10),
+
+            const SizedBox(height: 8),
+
             _DetailRow(label: 'Errores verde', value: '${group.greenErrors}'),
+
             const SizedBox(height: 14),
+
             _AccuracyBar(
               label: 'Precisión estímulo rojo',
               value: group.redAccuracy,
               color: AppColors.red,
             ),
+
             const SizedBox(height: 12),
+
             _AccuracyBar(
               label: 'Precisión estímulo verde',
               value: group.greenAccuracy,
               color: AppColors.green,
             ),
+
             if (group.averageReactionTimeMs != null) ...[
               const SizedBox(height: 14),
               _DetailRow(
@@ -374,9 +472,71 @@ class _GameSessionCard extends StatelessWidget {
                 value: '${group.averageReactionTimeMs!.round()} ms',
               ),
             ],
-            const SizedBox(height: 14),
-            _ObservationBox(text: group.observation),
+
+            if (group.observation.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              _ObservationBox(text: group.observation),
+            ],
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyWeekCard extends StatelessWidget {
+  const _EmptyWeekCard({required this.group});
+
+  final _WeeklyClinicalGroup group;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE5E7EB),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(
+              Icons.remove_circle_outline,
+              color: AppColors.textMuted,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _formatWeekRange(group.startDate, group.endDate),
+                  style: const TextStyle(
+                    color: AppColors.navy,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Sin actividad registrada',
+                  style: TextStyle(
+                    color: AppColors.textMuted,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -600,32 +760,105 @@ class _ObservationBox extends StatelessWidget {
   }
 }
 
-class _GroupedGameSession {
-  const _GroupedGameSession({
-    required this.date,
-    required this.gameName,
-    required this.totalDurationSeconds,
-    required this.playedRounds,
-    required this.redSuccess,
-    required this.redErrors,
-    required this.greenSuccess,
-    required this.greenErrors,
-    required this.averageReactionTimeMs,
-    required this.observation,
+class _WeeklyClinicalGroup {
+  const _WeeklyClinicalGroup({
+    required this.startDate,
+    required this.endDate,
+    required this.sessions,
   });
 
-  final DateTime date;
+  final DateTime startDate;
+  final DateTime endDate;
+  final List<ClinicalSessionSummary> sessions;
+
+  bool get hasActivity => sessions.isNotEmpty;
+
+  int get playedRounds => sessions.length;
+
+  int get activeDays {
+    return sessions
+        .map(
+          (session) => DateTime(
+            session.startedAt.year,
+            session.startedAt.month,
+            session.startedAt.day,
+          ),
+        )
+        .toSet()
+        .length;
+  }
+
+  double get totalDurationSeconds {
+    return sessions.fold<double>(
+      0,
+      (sum, session) => sum + session.durationSeconds,
+    );
+  }
+
+  double get averageDurationPerActiveDay {
+    if (activeDays == 0) return 0;
+    return totalDurationSeconds / activeDays;
+  }
+
+  Map<String, int> get gamesCount {
+    final result = <String, int>{};
+
+    for (final session in sessions) {
+      result.update(session.gameName, (value) => value + 1, ifAbsent: () => 1);
+    }
+
+    return result;
+  }
+
+  List<_WeeklyGameGroup> get gameGroups {
+    final groups = <String, List<ClinicalSessionSummary>>{};
+
+    for (final session in sessions) {
+      groups.putIfAbsent(session.gameName, () => []);
+
+      groups[session.gameName]!.add(session);
+    }
+
+    final result = groups.entries.map((entry) {
+      return _WeeklyGameGroup(gameName: entry.key, sessions: entry.value);
+    }).toList();
+
+    result.sort((a, b) => a.gameName.compareTo(b.gameName));
+
+    return result;
+  }
+}
+
+class _WeeklyGameGroup {
+  const _WeeklyGameGroup({required this.gameName, required this.sessions});
+
   final String gameName;
-  final double totalDurationSeconds;
-  final int playedRounds;
+  final List<ClinicalSessionSummary> sessions;
 
-  final int redSuccess;
-  final int redErrors;
-  final int greenSuccess;
-  final int greenErrors;
+  int get playedRounds => sessions.length;
 
-  final double? averageReactionTimeMs;
-  final String observation;
+  double get totalDurationSeconds {
+    return sessions.fold<double>(
+      0,
+      (sum, session) => sum + session.durationSeconds,
+    );
+  }
+
+  int get redSuccess {
+    return sessions.fold<int>(0, (sum, session) => sum + session.redSuccess);
+  }
+
+  int get redErrors {
+    return sessions.fold<int>(0, (sum, session) => sum + session.redErrors);
+  }
+
+  int get greenSuccess {
+    return sessions.fold<int>(0, (sum, session) => sum + session.greenSuccess);
+  }
+
+  int get greenErrors {
+    return sessions.fold<int>(0, (sum, session) => sum + session.greenErrors);
+  }
 
   int get redTotal => redSuccess + redErrors;
 
@@ -645,52 +878,64 @@ class _GroupedGameSession {
     return gameName == 'Piano Visual';
   }
 
-  _GroupedGameSession copyWith({
-    double? totalDurationSeconds,
-    int? playedRounds,
-    int? redSuccess,
-    int? redErrors,
-    int? greenSuccess,
-    int? greenErrors,
-    double? averageReactionTimeMs,
-    String? observation,
-  }) {
-    return _GroupedGameSession(
-      date: date,
-      gameName: gameName,
-      totalDurationSeconds: totalDurationSeconds ?? this.totalDurationSeconds,
-      playedRounds: playedRounds ?? this.playedRounds,
-      redSuccess: redSuccess ?? this.redSuccess,
-      redErrors: redErrors ?? this.redErrors,
-      greenSuccess: greenSuccess ?? this.greenSuccess,
-      greenErrors: greenErrors ?? this.greenErrors,
-      averageReactionTimeMs:
-          averageReactionTimeMs ?? this.averageReactionTimeMs,
-      observation: observation ?? this.observation,
-    );
+  double? get averageReactionTimeMs {
+    final reactionTimes = sessions
+        .map((session) => session.averageReactionTimeMs)
+        .whereType<double>()
+        .toList();
+
+    if (reactionTimes.isEmpty) {
+      return null;
+    }
+
+    final total = reactionTimes.fold<double>(0, (sum, value) => sum + value);
+
+    return total / reactionTimes.length;
+  }
+
+  String get observation {
+    if (sessions.isEmpty) return '';
+
+    for (final session in sessions.reversed) {
+      if (session.observation.trim().isNotEmpty) {
+        return session.observation;
+      }
+    }
+
+    return '';
   }
 }
 
-class _WeeklySummary {
-  const _WeeklySummary({
-    required this.therapySessionsCount,
-    required this.totalDurationSeconds,
-    required this.averageDurationSeconds,
-    required this.gamesCount,
-  });
+String _formatWeekRange(DateTime start, DateTime end) {
+  if (start.month == end.month) {
+    return 'Semana ${start.day} - ${end.day} ${_monthName(end.month)}';
+  }
 
-  final int therapySessionsCount;
-  final double totalDurationSeconds;
-  final double averageDurationSeconds;
-  final Map<String, int> gamesCount;
+  return 'Semana ${start.day} ${_monthName(start.month)} - '
+      '${end.day} ${_monthName(end.month)}';
 }
 
-String _formatDate(DateTime date) {
-  final day = date.day.toString().padLeft(2, '0');
-  final month = date.month.toString().padLeft(2, '0');
-  final year = date.year.toString();
+String _formatLongDate(DateTime date) {
+  return '${date.day} ${_monthName(date.month)} ${date.year}';
+}
 
-  return '$day/$month/$year';
+String _monthName(int month) {
+  const months = [
+    'enero',
+    'febrero',
+    'marzo',
+    'abril',
+    'mayo',
+    'junio',
+    'julio',
+    'agosto',
+    'septiembre',
+    'octubre',
+    'noviembre',
+    'diciembre',
+  ];
+
+  return months[month - 1];
 }
 
 String _formatDuration(double seconds) {

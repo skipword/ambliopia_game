@@ -8,6 +8,8 @@ part 'app_database.g.dart';
 class ClinicalSessions extends Table {
   TextColumn get id => text()();
 
+  TextColumn get patientId => text()();
+
   TextColumn get gameType => text()();
 
   TextColumn get gameName => text()();
@@ -58,11 +60,12 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   Future<void> saveClinicalSummary(ClinicalSessionSummary summary) async {
     final companion = ClinicalSessionsCompanion(
       id: Value(summary.id),
+      patientId: Value(summary.patientId),
       gameType: Value(summary.gameType.name),
       gameName: Value(summary.gameName),
       startedAt: Value(summary.startedAt),
@@ -94,6 +97,7 @@ class AppDatabase extends _$AppDatabase {
     return rows.map((row) {
       return ClinicalSessionSummary(
         id: row.id,
+        patientId: row.patientId,
         gameType: ClinicalGameType.values.byName(row.gameType),
         gameName: row.gameName,
         startedAt: row.startedAt,

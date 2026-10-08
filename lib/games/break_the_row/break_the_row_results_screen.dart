@@ -145,21 +145,6 @@ class BreakTheRowResultsScreen extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               height: 54,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.of(context).pushNamed(AppRoutes.doctorResults);
-                },
-                icon: const Icon(Icons.monitor_heart_outlined),
-                label: const Text(
-                  'Ver resultados clínicos',
-                  style: TextStyle(fontWeight: FontWeight.w800),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              height: 54,
               child: OutlinedButton(
                 onPressed: () {
                   Navigator.of(

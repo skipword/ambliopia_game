@@ -30,6 +30,16 @@ class AppState extends ChangeNotifier {
 
   Patient? get patient => _patient;
 
+  List<Patient> get doctorPatients {
+    final currentPatient = _patient;
+
+    if (currentPatient == null) {
+      return const [];
+    }
+
+    return [currentPatient];
+  }
+
   Eye? get amblyopicEye => _amblyopicEye;
 
   Eye? get dominantEye => _amblyopicEye?.opposite;

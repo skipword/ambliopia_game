@@ -3,6 +3,7 @@ enum ClinicalGameType { pianoVisual, breakTheRow }
 class ClinicalSessionSummary {
   const ClinicalSessionSummary({
     required this.id,
+    required this.patientId,
     required this.gameType,
     required this.gameName,
     required this.startedAt,
@@ -22,6 +23,8 @@ class ClinicalSessionSummary {
   });
 
   final String id;
+  final String patientId;
+
   final ClinicalGameType gameType;
   final String gameName;
 

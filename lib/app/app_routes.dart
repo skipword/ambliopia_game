@@ -18,4 +18,5 @@ class AppRoutes {
   static const breakTheRowResults = '/games/break-the-row/results';
 
   static const doctorResults = '/doctor/results';
+  static const doctorPatients = '/doctor/patients';
 }

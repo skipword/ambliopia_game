@@ -175,15 +175,13 @@ class _TrainingCard extends StatelessWidget {
     required this.icon,
     required this.buttonText,
     required this.onTap,
-    this.locked = false,
   });
 
   final String title;
   final String description;
   final IconData icon;
   final String buttonText;
-  final VoidCallback? onTap;
-  final bool locked;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -209,16 +207,10 @@ class _TrainingCard extends StatelessWidget {
                 width: 58,
                 height: 58,
                 decoration: BoxDecoration(
-                  color: locked
-                      ? Colors.grey.withValues(alpha: 0.16)
-                      : AppColors.cyan.withValues(alpha: 0.16),
+                  color: AppColors.cyan.withValues(alpha: 0.16),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Icon(
-                  locked ? Icons.lock : icon,
-                  color: locked ? Colors.grey : AppColors.cyan,
-                  size: 32,
-                ),
+                child: Icon(icon, color: AppColors.cyan, size: 32),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -253,7 +245,7 @@ class _TrainingCard extends StatelessWidget {
             width: double.infinity,
             height: 52,
             child: FilledButton(
-              onPressed: locked ? null : onTap,
+              onPressed: onTap,
               child: Text(
                 buttonText,
                 style: const TextStyle(fontWeight: FontWeight.w900),

@@ -18,6 +18,17 @@ class $ClinicalSessionsTable extends ClinicalSessions
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _patientIdMeta = const VerificationMeta(
+    'patientId',
+  );
+  @override
+  late final GeneratedColumn<String> patientId = GeneratedColumn<String>(
+    'patient_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
   static const VerificationMeta _gameTypeMeta = const VerificationMeta(
     'gameType',
   );
@@ -194,6 +205,7 @@ class $ClinicalSessionsTable extends ClinicalSessions
   @override
   List<GeneratedColumn> get $columns => [
     id,
+    patientId,
     gameType,
     gameName,
     startedAt,
@@ -227,6 +239,14 @@ class $ClinicalSessionsTable extends ClinicalSessions
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     } else if (isInserting) {
       context.missing(_idMeta);
+    }
+    if (data.containsKey('patient_id')) {
+      context.handle(
+        _patientIdMeta,
+        patientId.isAcceptableOrUnknown(data['patient_id']!, _patientIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_patientIdMeta);
     }
     if (data.containsKey('game_type')) {
       context.handle(
@@ -394,6 +414,10 @@ class $ClinicalSessionsTable extends ClinicalSessions
         DriftSqlType.string,
         data['${effectivePrefix}id'],
       )!,
+      patientId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}patient_id'],
+      )!,
       gameType: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}game_type'],
@@ -469,6 +493,7 @@ class $ClinicalSessionsTable extends ClinicalSessions
 
 class ClinicalSession extends DataClass implements Insertable<ClinicalSession> {
   final String id;
+  final String patientId;
   final String gameType;
   final String gameName;
   final DateTime startedAt;
@@ -487,6 +512,7 @@ class ClinicalSession extends DataClass implements Insertable<ClinicalSession> {
   final double? averageReactionTimeMs;
   const ClinicalSession({
     required this.id,
+    required this.patientId,
     required this.gameType,
     required this.gameName,
     required this.startedAt,
@@ -508,6 +534,7 @@ class ClinicalSession extends DataClass implements Insertable<ClinicalSession> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
+    map['patient_id'] = Variable<String>(patientId);
     map['game_type'] = Variable<String>(gameType);
     map['game_name'] = Variable<String>(gameName);
     map['started_at'] = Variable<DateTime>(startedAt);
@@ -532,6 +559,7 @@ class ClinicalSession extends DataClass implements Insertable<ClinicalSession> {
   ClinicalSessionsCompanion toCompanion(bool nullToAbsent) {
     return ClinicalSessionsCompanion(
       id: Value(id),
+      patientId: Value(patientId),
       gameType: Value(gameType),
       gameName: Value(gameName),
       startedAt: Value(startedAt),
@@ -560,6 +588,7 @@ class ClinicalSession extends DataClass implements Insertable<ClinicalSession> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return ClinicalSession(
       id: serializer.fromJson<String>(json['id']),
+      patientId: serializer.fromJson<String>(json['patientId']),
       gameType: serializer.fromJson<String>(json['gameType']),
       gameName: serializer.fromJson<String>(json['gameName']),
       startedAt: serializer.fromJson<DateTime>(json['startedAt']),
@@ -585,6 +614,7 @@ class ClinicalSession extends DataClass implements Insertable<ClinicalSession> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
+      'patientId': serializer.toJson<String>(patientId),
       'gameType': serializer.toJson<String>(gameType),
       'gameName': serializer.toJson<String>(gameName),
       'startedAt': serializer.toJson<DateTime>(startedAt),
@@ -608,6 +638,7 @@ class ClinicalSession extends DataClass implements Insertable<ClinicalSession> {
 
   ClinicalSession copyWith({
     String? id,
+    String? patientId,
     String? gameType,
     String? gameName,
     DateTime? startedAt,
@@ -626,6 +657,7 @@ class ClinicalSession extends DataClass implements Insertable<ClinicalSession> {
     Value<double?> averageReactionTimeMs = const Value.absent(),
   }) => ClinicalSession(
     id: id ?? this.id,
+    patientId: patientId ?? this.patientId,
     gameType: gameType ?? this.gameType,
     gameName: gameName ?? this.gameName,
     startedAt: startedAt ?? this.startedAt,
@@ -648,6 +680,7 @@ class ClinicalSession extends DataClass implements Insertable<ClinicalSession> {
   ClinicalSession copyWithCompanion(ClinicalSessionsCompanion data) {
     return ClinicalSession(
       id: data.id.present ? data.id.value : this.id,
+      patientId: data.patientId.present ? data.patientId.value : this.patientId,
       gameType: data.gameType.present ? data.gameType.value : this.gameType,
       gameName: data.gameName.present ? data.gameName.value : this.gameName,
       startedAt: data.startedAt.present ? data.startedAt.value : this.startedAt,
@@ -691,6 +724,7 @@ class ClinicalSession extends DataClass implements Insertable<ClinicalSession> {
   String toString() {
     return (StringBuffer('ClinicalSession(')
           ..write('id: $id, ')
+          ..write('patientId: $patientId, ')
           ..write('gameType: $gameType, ')
           ..write('gameName: $gameName, ')
           ..write('startedAt: $startedAt, ')
@@ -714,6 +748,7 @@ class ClinicalSession extends DataClass implements Insertable<ClinicalSession> {
   @override
   int get hashCode => Object.hash(
     id,
+    patientId,
     gameType,
     gameName,
     startedAt,
@@ -736,6 +771,7 @@ class ClinicalSession extends DataClass implements Insertable<ClinicalSession> {
       identical(this, other) ||
       (other is ClinicalSession &&
           other.id == this.id &&
+          other.patientId == this.patientId &&
           other.gameType == this.gameType &&
           other.gameName == this.gameName &&
           other.startedAt == this.startedAt &&
@@ -756,6 +792,7 @@ class ClinicalSession extends DataClass implements Insertable<ClinicalSession> {
 
 class ClinicalSessionsCompanion extends UpdateCompanion<ClinicalSession> {
   final Value<String> id;
+  final Value<String> patientId;
   final Value<String> gameType;
   final Value<String> gameName;
   final Value<DateTime> startedAt;
@@ -775,6 +812,7 @@ class ClinicalSessionsCompanion extends UpdateCompanion<ClinicalSession> {
   final Value<int> rowid;
   const ClinicalSessionsCompanion({
     this.id = const Value.absent(),
+    this.patientId = const Value.absent(),
     this.gameType = const Value.absent(),
     this.gameName = const Value.absent(),
     this.startedAt = const Value.absent(),
@@ -795,6 +833,7 @@ class ClinicalSessionsCompanion extends UpdateCompanion<ClinicalSession> {
   });
   ClinicalSessionsCompanion.insert({
     required String id,
+    required String patientId,
     required String gameType,
     required String gameName,
     required DateTime startedAt,
@@ -813,6 +852,7 @@ class ClinicalSessionsCompanion extends UpdateCompanion<ClinicalSession> {
     this.averageReactionTimeMs = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
+       patientId = Value(patientId),
        gameType = Value(gameType),
        gameName = Value(gameName),
        startedAt = Value(startedAt),
@@ -830,6 +870,7 @@ class ClinicalSessionsCompanion extends UpdateCompanion<ClinicalSession> {
        observation = Value(observation);
   static Insertable<ClinicalSession> custom({
     Expression<String>? id,
+    Expression<String>? patientId,
     Expression<String>? gameType,
     Expression<String>? gameName,
     Expression<DateTime>? startedAt,
@@ -850,6 +891,7 @@ class ClinicalSessionsCompanion extends UpdateCompanion<ClinicalSession> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (patientId != null) 'patient_id': patientId,
       if (gameType != null) 'game_type': gameType,
       if (gameName != null) 'game_name': gameName,
       if (startedAt != null) 'started_at': startedAt,
@@ -873,6 +915,7 @@ class ClinicalSessionsCompanion extends UpdateCompanion<ClinicalSession> {
 
   ClinicalSessionsCompanion copyWith({
     Value<String>? id,
+    Value<String>? patientId,
     Value<String>? gameType,
     Value<String>? gameName,
     Value<DateTime>? startedAt,
@@ -893,6 +936,7 @@ class ClinicalSessionsCompanion extends UpdateCompanion<ClinicalSession> {
   }) {
     return ClinicalSessionsCompanion(
       id: id ?? this.id,
+      patientId: patientId ?? this.patientId,
       gameType: gameType ?? this.gameType,
       gameName: gameName ?? this.gameName,
       startedAt: startedAt ?? this.startedAt,
@@ -919,6 +963,9 @@ class ClinicalSessionsCompanion extends UpdateCompanion<ClinicalSession> {
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<String>(id.value);
+    }
+    if (patientId.present) {
+      map['patient_id'] = Variable<String>(patientId.value);
     }
     if (gameType.present) {
       map['game_type'] = Variable<String>(gameType.value);
@@ -980,6 +1027,7 @@ class ClinicalSessionsCompanion extends UpdateCompanion<ClinicalSession> {
   String toString() {
     return (StringBuffer('ClinicalSessionsCompanion(')
           ..write('id: $id, ')
+          ..write('patientId: $patientId, ')
           ..write('gameType: $gameType, ')
           ..write('gameName: $gameName, ')
           ..write('startedAt: $startedAt, ')
@@ -1018,6 +1066,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
 typedef $$ClinicalSessionsTableCreateCompanionBuilder =
     ClinicalSessionsCompanion Function({
       required String id,
+      required String patientId,
       required String gameType,
       required String gameName,
       required DateTime startedAt,
@@ -1039,6 +1088,7 @@ typedef $$ClinicalSessionsTableCreateCompanionBuilder =
 typedef $$ClinicalSessionsTableUpdateCompanionBuilder =
     ClinicalSessionsCompanion Function({
       Value<String> id,
+      Value<String> patientId,
       Value<String> gameType,
       Value<String> gameName,
       Value<DateTime> startedAt,
@@ -1069,6 +1119,11 @@ class $$ClinicalSessionsTableFilterComposer
   });
   ColumnFilters<String> get id => $composableBuilder(
     column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get patientId => $composableBuilder(
+    column: $table.patientId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1167,6 +1222,11 @@ class $$ClinicalSessionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get patientId => $composableBuilder(
+    column: $table.patientId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get gameType => $composableBuilder(
     column: $table.gameType,
     builder: (column) => ColumnOrderings(column),
@@ -1259,6 +1319,9 @@ class $$ClinicalSessionsTableAnnotationComposer
   });
   GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get patientId =>
+      $composableBuilder(column: $table.patientId, builder: (column) => column);
 
   GeneratedColumn<String> get gameType =>
       $composableBuilder(column: $table.gameType, builder: (column) => column);
@@ -1367,6 +1430,7 @@ class $$ClinicalSessionsTableTableManager
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
+                Value<String> patientId = const Value.absent(),
                 Value<String> gameType = const Value.absent(),
                 Value<String> gameName = const Value.absent(),
                 Value<DateTime> startedAt = const Value.absent(),
@@ -1386,6 +1450,7 @@ class $$ClinicalSessionsTableTableManager
                 Value<int> rowid = const Value.absent(),
               }) => ClinicalSessionsCompanion(
                 id: id,
+                patientId: patientId,
                 gameType: gameType,
                 gameName: gameName,
                 startedAt: startedAt,
@@ -1407,6 +1472,7 @@ class $$ClinicalSessionsTableTableManager
           createCompanionCallback:
               ({
                 required String id,
+                required String patientId,
                 required String gameType,
                 required String gameName,
                 required DateTime startedAt,
@@ -1426,6 +1492,7 @@ class $$ClinicalSessionsTableTableManager
                 Value<int> rowid = const Value.absent(),
               }) => ClinicalSessionsCompanion.insert(
                 id: id,
+                patientId: patientId,
                 gameType: gameType,
                 gameName: gameName,
                 startedAt: startedAt,

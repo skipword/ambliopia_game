@@ -91,9 +91,15 @@ class _PianoVisualScreenState extends State<PianoVisualScreen> {
 
     clinicalResultSaved = true;
 
+    final appState = context.read<AppState>();
+    final patient = appState.patient;
+
+    if (patient == null) return;
+
     context.read<AppState>().addClinicalSession(
       ClinicalSessionSummary(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
+        patientId: patient.code,
         gameType: ClinicalGameType.pianoVisual,
         gameName: 'Piano Visual',
         startedAt: result.startedAt,
