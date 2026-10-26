@@ -7,6 +7,7 @@ import '../models/clinical_session_summary.dart';
 import '../models/eye.dart';
 import '../models/patient.dart';
 import '../storage/app_preferences.dart';
+import '../services/supabase_service.dart';
 
 class AppState extends ChangeNotifier {
   AppState({AppPreferences? preferences, AppDatabase? database})
@@ -71,6 +72,7 @@ class AppState extends ChangeNotifier {
   Future<void> loadSavedState() async {
     await _loadBasicState();
     await _loadClinicalSessions();
+    await _syncPendingClinicalSessions();
   }
 
   Future<void> _loadBasicState() async {
@@ -148,8 +150,8 @@ class AppState extends ChangeNotifier {
     _hasCompletedCalibration = false;
 
     notifyListeners();
-
     unawaited(_saveBasicState());
+    unawaited(_syncPatientConfiguration());
   }
 
   void setRedContrast(double value) {
@@ -174,6 +176,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
 
     unawaited(_saveBasicState());
+    unawaited(_syncPatientConfiguration());
   }
 
   String consumeCalibrationReturnRoute({required String defaultRoute}) {
@@ -210,9 +213,24 @@ class AppState extends ChangeNotifier {
     try {
       await _database.saveClinicalSummary(summary);
 
-      debugPrint('Sesión clínica guardada: ${summary.gameName}');
+      debugPrint('Sesión clínica guardada localmente: ${summary.gameName}');
     } catch (error) {
-      debugPrint('No fue posible guardar la sesión clínica: $error');
+      debugPrint('No fue posible guardar la sesión clínica localmente: $error');
+      return;
+    }
+
+    try {
+      await SupabaseService.instance.saveClinicalSession(summary);
+
+      await _database.markClinicalSessionSynced(summary.id);
+
+      debugPrint(
+        'Sesión clínica sincronizada con Supabase: ${summary.gameName}',
+      );
+    } catch (error) {
+      debugPrint(
+        'Sesión guardada localmente, pendiente de sincronizar: $error',
+      );
     }
   }
 
@@ -243,5 +261,61 @@ class AppState extends ChangeNotifier {
     unawaited(_database.close());
 
     super.dispose();
+  }
+
+  Future<void> _syncPatientConfiguration() async {
+    final patient = _patient;
+    final amblyopicEye = _amblyopicEye;
+
+    if (patient == null || amblyopicEye == null) return;
+
+    try {
+      await SupabaseService.instance.updatePatientConfiguration(
+        patientCode: patient.code,
+        amblyopicEye: amblyopicEye.name,
+        redContrast: _redContrast,
+        greenContrast: _greenContrast,
+        calibrationCompleted: _hasCompletedCalibration,
+      );
+
+      debugPrint('Configuración ocular sincronizada con Supabase');
+    } catch (error) {
+      debugPrint('No fue posible sincronizar la configuración ocular: $error');
+    }
+  }
+
+  Future<void> _syncPendingClinicalSessions() async {
+    final patient = _patient;
+
+    if (patient == null) return;
+
+    try {
+      final pendingSessions = await _database.getUnsyncedClinicalSummaries(
+        patient.code,
+      );
+
+      if (pendingSessions.isEmpty) {
+        debugPrint('No hay sesiones pendientes por sincronizar');
+        return;
+      }
+
+      debugPrint(
+        'Sesiones pendientes por sincronizar: ${pendingSessions.length}',
+      );
+
+      for (final session in pendingSessions) {
+        try {
+          await SupabaseService.instance.saveClinicalSession(session);
+
+          await _database.markClinicalSessionSynced(session.id);
+
+          debugPrint('Sesión pendiente sincronizada: ${session.id}');
+        } catch (error) {
+          debugPrint('No fue posible sincronizar ${session.id}: $error');
+        }
+      }
+    } catch (error) {
+      debugPrint('No fue posible revisar sesiones pendientes: $error');
+    }
   }
 }

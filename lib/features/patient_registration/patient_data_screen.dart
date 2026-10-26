@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../app/app_routes.dart';
 import '../../app/app_theme.dart';
+import '../../core/services/supabase_service.dart';
 import '../../core/state/app_state.dart';
 
 class PatientDataScreen extends StatefulWidget {
@@ -13,20 +14,9 @@ class PatientDataScreen extends StatefulWidget {
 }
 
 class _PatientDataScreenState extends State<PatientDataScreen> {
-  final TextEditingController nameController = TextEditingController(
-    text: 'fer',
-  );
+  final TextEditingController nameController = TextEditingController();
 
-  String selectedCode = 'P-002';
   int selectedAge = 5;
-
-  final List<String> patientCodes = const [
-    'P-001',
-    'P-002',
-    'P-003',
-    'P-004',
-    'P-005',
-  ];
 
   final List<int> ages = const [3, 4, 5, 6, 7];
 
@@ -36,23 +26,36 @@ class _PatientDataScreenState extends State<PatientDataScreen> {
     super.dispose();
   }
 
-  void continueToOcularConfig() {
-    context.read<AppState>().setPatient(
-      code: selectedCode,
-      name: nameController.text,
-      age: selectedAge,
-    );
+  Future<void> continueToOcularConfig() async {
+    final appState = context.read<AppState>();
 
-    Navigator.of(context).pushNamed(AppRoutes.ocularConfig);
+    try {
+      final patient = await SupabaseService.instance.registerPatient(
+        name: nameController.text,
+        age: selectedAge,
+      );
+
+      appState.setPatient(
+        code: patient.code,
+        name: patient.name,
+        age: patient.age,
+      );
+
+      if (!mounted) return;
+
+      Navigator.of(context).pushNamed(AppRoutes.ocularConfig);
+    } catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No fue posible registrar el paciente: $error')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
-
-    final codeBoxWidth = ((screenWidth - 48 - 24) / 3)
-        .clamp(92.0, 150.0)
-        .toDouble();
 
     final ageBoxWidth = ((screenWidth - 48 - 36) / 4)
         .clamp(72.0, 110.0)
@@ -87,28 +90,10 @@ class _PatientDataScreenState extends State<PatientDataScreen> {
               ),
             ),
             const SizedBox(height: 36),
-            const _SectionTitle(title: 'Código de paciente'),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: patientCodes.map((code) {
-                return _SelectableBox(
-                  width: codeBoxWidth,
-                  height: 64,
-                  label: code,
-                  selected: selectedCode == code,
-                  onTap: () {
-                    setState(() {
-                      selectedCode = code;
-                    });
-                  },
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 36),
+
             const _SectionTitle(title: 'Nombre completo'),
             const SizedBox(height: 16),
+
             TextField(
               controller: nameController,
               decoration: InputDecoration(
@@ -130,9 +115,12 @@ class _PatientDataScreenState extends State<PatientDataScreen> {
                 fontWeight: FontWeight.w700,
               ),
             ),
+
             const SizedBox(height: 36),
+
             const _SectionTitle(title: 'Edad'),
             const SizedBox(height: 16),
+
             Wrap(
               spacing: 12,
               runSpacing: 12,
@@ -150,7 +138,9 @@ class _PatientDataScreenState extends State<PatientDataScreen> {
                 );
               }).toList(),
             ),
+
             const SizedBox(height: 14),
+
             const Text(
               'Rango: 3 a 7 años',
               style: TextStyle(
@@ -158,6 +148,7 @@ class _PatientDataScreenState extends State<PatientDataScreen> {
                 fontWeight: FontWeight.w700,
               ),
             ),
+
             const SizedBox(height: 24),
           ],
         ),

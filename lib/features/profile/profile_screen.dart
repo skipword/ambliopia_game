@@ -6,27 +6,50 @@ import '../../app/app_theme.dart';
 import '../../core/models/eye.dart';
 import '../../core/state/app_state.dart';
 import '../../core/widgets/app_bottom_nav.dart';
+import '../../core/services/supabase_service.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
-  void showEditNameDialog(BuildContext context) {
+  Future<void> showEditNameDialog(BuildContext context) async {
     final appState = context.read<AppState>();
     final patient = appState.patient;
 
     if (patient == null) return;
 
-    showDialog<String>(
+    final newName = await showDialog<String>(
       context: context,
       builder: (_) {
         return _EditNameDialog(initialName: patient.name);
       },
-    ).then((newName) {
-      if (newName == null) return;
-      if (newName.trim().isEmpty) return;
+    );
 
-      appState.setPatient(code: patient.code, name: newName, age: patient.age);
-    });
+    if (newName == null || newName.trim().isEmpty) return;
+
+    try {
+      await SupabaseService.instance.updatePatientName(
+        patientCode: patient.code,
+        name: newName,
+      );
+
+      appState.setPatient(
+        code: patient.code,
+        name: newName.trim(),
+        age: patient.age,
+      );
+
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nombre actualizado correctamente')),
+      );
+    } catch (error) {
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No fue posible actualizar el nombre: $error')),
+      );
+    }
   }
 
   void recalibrate(BuildContext context) {

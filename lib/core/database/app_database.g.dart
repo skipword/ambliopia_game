@@ -202,6 +202,19 @@ class $ClinicalSessionsTable extends ClinicalSessions
         type: DriftSqlType.double,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _syncedMeta = const VerificationMeta('synced');
+  @override
+  late final GeneratedColumn<bool> synced = GeneratedColumn<bool>(
+    'synced',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("synced" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -222,6 +235,7 @@ class $ClinicalSessionsTable extends ClinicalSessions
     eventsCount,
     observation,
     averageReactionTimeMs,
+    synced,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -401,6 +415,12 @@ class $ClinicalSessionsTable extends ClinicalSessions
         ),
       );
     }
+    if (data.containsKey('synced')) {
+      context.handle(
+        _syncedMeta,
+        synced.isAcceptableOrUnknown(data['synced']!, _syncedMeta),
+      );
+    }
     return context;
   }
 
@@ -482,6 +502,10 @@ class $ClinicalSessionsTable extends ClinicalSessions
         DriftSqlType.double,
         data['${effectivePrefix}average_reaction_time_ms'],
       ),
+      synced: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}synced'],
+      )!,
     );
   }
 
@@ -510,6 +534,7 @@ class ClinicalSession extends DataClass implements Insertable<ClinicalSession> {
   final int eventsCount;
   final String observation;
   final double? averageReactionTimeMs;
+  final bool synced;
   const ClinicalSession({
     required this.id,
     required this.patientId,
@@ -529,6 +554,7 @@ class ClinicalSession extends DataClass implements Insertable<ClinicalSession> {
     required this.eventsCount,
     required this.observation,
     this.averageReactionTimeMs,
+    required this.synced,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -553,6 +579,7 @@ class ClinicalSession extends DataClass implements Insertable<ClinicalSession> {
     if (!nullToAbsent || averageReactionTimeMs != null) {
       map['average_reaction_time_ms'] = Variable<double>(averageReactionTimeMs);
     }
+    map['synced'] = Variable<bool>(synced);
     return map;
   }
 
@@ -578,6 +605,7 @@ class ClinicalSession extends DataClass implements Insertable<ClinicalSession> {
       averageReactionTimeMs: averageReactionTimeMs == null && nullToAbsent
           ? const Value.absent()
           : Value(averageReactionTimeMs),
+      synced: Value(synced),
     );
   }
 
@@ -607,6 +635,7 @@ class ClinicalSession extends DataClass implements Insertable<ClinicalSession> {
       averageReactionTimeMs: serializer.fromJson<double?>(
         json['averageReactionTimeMs'],
       ),
+      synced: serializer.fromJson<bool>(json['synced']),
     );
   }
   @override
@@ -633,6 +662,7 @@ class ClinicalSession extends DataClass implements Insertable<ClinicalSession> {
       'averageReactionTimeMs': serializer.toJson<double?>(
         averageReactionTimeMs,
       ),
+      'synced': serializer.toJson<bool>(synced),
     };
   }
 
@@ -655,6 +685,7 @@ class ClinicalSession extends DataClass implements Insertable<ClinicalSession> {
     int? eventsCount,
     String? observation,
     Value<double?> averageReactionTimeMs = const Value.absent(),
+    bool? synced,
   }) => ClinicalSession(
     id: id ?? this.id,
     patientId: patientId ?? this.patientId,
@@ -676,6 +707,7 @@ class ClinicalSession extends DataClass implements Insertable<ClinicalSession> {
     averageReactionTimeMs: averageReactionTimeMs.present
         ? averageReactionTimeMs.value
         : this.averageReactionTimeMs,
+    synced: synced ?? this.synced,
   );
   ClinicalSession copyWithCompanion(ClinicalSessionsCompanion data) {
     return ClinicalSession(
@@ -717,6 +749,7 @@ class ClinicalSession extends DataClass implements Insertable<ClinicalSession> {
       averageReactionTimeMs: data.averageReactionTimeMs.present
           ? data.averageReactionTimeMs.value
           : this.averageReactionTimeMs,
+      synced: data.synced.present ? data.synced.value : this.synced,
     );
   }
 
@@ -740,7 +773,8 @@ class ClinicalSession extends DataClass implements Insertable<ClinicalSession> {
           ..write('greenErrors: $greenErrors, ')
           ..write('eventsCount: $eventsCount, ')
           ..write('observation: $observation, ')
-          ..write('averageReactionTimeMs: $averageReactionTimeMs')
+          ..write('averageReactionTimeMs: $averageReactionTimeMs, ')
+          ..write('synced: $synced')
           ..write(')'))
         .toString();
   }
@@ -765,6 +799,7 @@ class ClinicalSession extends DataClass implements Insertable<ClinicalSession> {
     eventsCount,
     observation,
     averageReactionTimeMs,
+    synced,
   );
   @override
   bool operator ==(Object other) =>
@@ -787,7 +822,8 @@ class ClinicalSession extends DataClass implements Insertable<ClinicalSession> {
           other.greenErrors == this.greenErrors &&
           other.eventsCount == this.eventsCount &&
           other.observation == this.observation &&
-          other.averageReactionTimeMs == this.averageReactionTimeMs);
+          other.averageReactionTimeMs == this.averageReactionTimeMs &&
+          other.synced == this.synced);
 }
 
 class ClinicalSessionsCompanion extends UpdateCompanion<ClinicalSession> {
@@ -809,6 +845,7 @@ class ClinicalSessionsCompanion extends UpdateCompanion<ClinicalSession> {
   final Value<int> eventsCount;
   final Value<String> observation;
   final Value<double?> averageReactionTimeMs;
+  final Value<bool> synced;
   final Value<int> rowid;
   const ClinicalSessionsCompanion({
     this.id = const Value.absent(),
@@ -829,6 +866,7 @@ class ClinicalSessionsCompanion extends UpdateCompanion<ClinicalSession> {
     this.eventsCount = const Value.absent(),
     this.observation = const Value.absent(),
     this.averageReactionTimeMs = const Value.absent(),
+    this.synced = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ClinicalSessionsCompanion.insert({
@@ -850,6 +888,7 @@ class ClinicalSessionsCompanion extends UpdateCompanion<ClinicalSession> {
     required int eventsCount,
     required String observation,
     this.averageReactionTimeMs = const Value.absent(),
+    this.synced = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        patientId = Value(patientId),
@@ -887,6 +926,7 @@ class ClinicalSessionsCompanion extends UpdateCompanion<ClinicalSession> {
     Expression<int>? eventsCount,
     Expression<String>? observation,
     Expression<double>? averageReactionTimeMs,
+    Expression<bool>? synced,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -909,6 +949,7 @@ class ClinicalSessionsCompanion extends UpdateCompanion<ClinicalSession> {
       if (observation != null) 'observation': observation,
       if (averageReactionTimeMs != null)
         'average_reaction_time_ms': averageReactionTimeMs,
+      if (synced != null) 'synced': synced,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -932,6 +973,7 @@ class ClinicalSessionsCompanion extends UpdateCompanion<ClinicalSession> {
     Value<int>? eventsCount,
     Value<String>? observation,
     Value<double?>? averageReactionTimeMs,
+    Value<bool>? synced,
     Value<int>? rowid,
   }) {
     return ClinicalSessionsCompanion(
@@ -954,6 +996,7 @@ class ClinicalSessionsCompanion extends UpdateCompanion<ClinicalSession> {
       observation: observation ?? this.observation,
       averageReactionTimeMs:
           averageReactionTimeMs ?? this.averageReactionTimeMs,
+      synced: synced ?? this.synced,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1017,6 +1060,9 @@ class ClinicalSessionsCompanion extends UpdateCompanion<ClinicalSession> {
         averageReactionTimeMs.value,
       );
     }
+    if (synced.present) {
+      map['synced'] = Variable<bool>(synced.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1044,6 +1090,7 @@ class ClinicalSessionsCompanion extends UpdateCompanion<ClinicalSession> {
           ..write('eventsCount: $eventsCount, ')
           ..write('observation: $observation, ')
           ..write('averageReactionTimeMs: $averageReactionTimeMs, ')
+          ..write('synced: $synced, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1083,6 +1130,7 @@ typedef $$ClinicalSessionsTableCreateCompanionBuilder =
       required int eventsCount,
       required String observation,
       Value<double?> averageReactionTimeMs,
+      Value<bool> synced,
       Value<int> rowid,
     });
 typedef $$ClinicalSessionsTableUpdateCompanionBuilder =
@@ -1105,6 +1153,7 @@ typedef $$ClinicalSessionsTableUpdateCompanionBuilder =
       Value<int> eventsCount,
       Value<String> observation,
       Value<double?> averageReactionTimeMs,
+      Value<bool> synced,
       Value<int> rowid,
     });
 
@@ -1204,6 +1253,11 @@ class $$ClinicalSessionsTableFilterComposer
 
   ColumnFilters<double> get averageReactionTimeMs => $composableBuilder(
     column: $table.averageReactionTimeMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get synced => $composableBuilder(
+    column: $table.synced,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -1306,6 +1360,11 @@ class $$ClinicalSessionsTableOrderingComposer
     column: $table.averageReactionTimeMs,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get synced => $composableBuilder(
+    column: $table.synced,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ClinicalSessionsTableAnnotationComposer
@@ -1390,6 +1449,9 @@ class $$ClinicalSessionsTableAnnotationComposer
     column: $table.averageReactionTimeMs,
     builder: (column) => column,
   );
+
+  GeneratedColumn<bool> get synced =>
+      $composableBuilder(column: $table.synced, builder: (column) => column);
 }
 
 class $$ClinicalSessionsTableTableManager
@@ -1447,6 +1509,7 @@ class $$ClinicalSessionsTableTableManager
                 Value<int> eventsCount = const Value.absent(),
                 Value<String> observation = const Value.absent(),
                 Value<double?> averageReactionTimeMs = const Value.absent(),
+                Value<bool> synced = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ClinicalSessionsCompanion(
                 id: id,
@@ -1467,6 +1530,7 @@ class $$ClinicalSessionsTableTableManager
                 eventsCount: eventsCount,
                 observation: observation,
                 averageReactionTimeMs: averageReactionTimeMs,
+                synced: synced,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -1489,6 +1553,7 @@ class $$ClinicalSessionsTableTableManager
                 required int eventsCount,
                 required String observation,
                 Value<double?> averageReactionTimeMs = const Value.absent(),
+                Value<bool> synced = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ClinicalSessionsCompanion.insert(
                 id: id,
@@ -1509,6 +1574,7 @@ class $$ClinicalSessionsTableTableManager
                 eventsCount: eventsCount,
                 observation: observation,
                 averageReactionTimeMs: averageReactionTimeMs,
+                synced: synced,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

@@ -42,12 +42,36 @@ class ClinicalSessions extends Table {
 
   RealColumn get averageReactionTimeMs => real().nullable()();
 
+  BoolColumn get synced => boolean().withDefault(const Constant(false))();
+
   @override
   Set<Column> get primaryKey => {id};
 }
 
 @DriftDatabase(tables: [ClinicalSessions])
 class AppDatabase extends _$AppDatabase {
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (m) async {
+      await m.createAll();
+    },
+    onUpgrade: (m, from, to) async {
+      if (from < 3) {
+        final columns = await customSelect(
+          "PRAGMA table_info('clinical_sessions')",
+        ).get();
+
+        final hasSyncedColumn = columns.any(
+          (row) => row.read<String>('name') == 'synced',
+        );
+
+        if (!hasSyncedColumn) {
+          await m.addColumn(clinicalSessions, clinicalSessions.synced);
+        }
+      }
+    },
+  );
+
   AppDatabase()
     : super(
         driftDatabase(
@@ -60,7 +84,47 @@ class AppDatabase extends _$AppDatabase {
       );
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
+
+  Future<List<ClinicalSessionSummary>> getUnsyncedClinicalSummaries(
+    String patientId,
+  ) async {
+    final rows =
+        await (select(clinicalSessions)..where(
+              (table) =>
+                  table.synced.equals(false) &
+                  table.patientId.equals(patientId),
+            ))
+            .get();
+
+    return rows.map((row) {
+      return ClinicalSessionSummary(
+        id: row.id,
+        patientId: row.patientId,
+        gameType: ClinicalGameType.values.byName(row.gameType),
+        gameName: row.gameName,
+        startedAt: row.startedAt,
+        endedAt: row.endedAt,
+        durationSeconds: row.durationSeconds,
+        score: row.score,
+        objectiveLabel: row.objectiveLabel,
+        completedObjective: row.completedObjective,
+        targetObjective: row.targetObjective,
+        redSuccess: row.redSuccess,
+        redErrors: row.redErrors,
+        greenSuccess: row.greenSuccess,
+        greenErrors: row.greenErrors,
+        eventsCount: row.eventsCount,
+        observation: row.observation,
+        averageReactionTimeMs: row.averageReactionTimeMs,
+      );
+    }).toList();
+  }
+
+  Future<void> markClinicalSessionSynced(String id) async {
+    await (update(clinicalSessions)..where((table) => table.id.equals(id)))
+        .write(ClinicalSessionsCompanion(synced: const Value(true)));
+  }
 
   Future<void> saveClinicalSummary(ClinicalSessionSummary summary) async {
     final companion = ClinicalSessionsCompanion(
@@ -82,6 +146,7 @@ class AppDatabase extends _$AppDatabase {
       eventsCount: Value(summary.eventsCount),
       observation: Value(summary.observation),
       averageReactionTimeMs: Value(summary.averageReactionTimeMs),
+      synced: const Value(false),
     );
 
     await into(
