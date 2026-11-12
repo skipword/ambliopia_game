@@ -33,6 +33,20 @@ class GamesMenuScreen extends StatelessWidget {
     Navigator.of(context).pushNamed(AppRoutes.calibrationStep1);
   }
 
+  void startFarmCrossing(BuildContext context) {
+    final appState = context.read<AppState>();
+
+    if (appState.hasCompletedCalibration) {
+      Navigator.of(context).pushNamed(AppRoutes.farmCrossingPreparation);
+
+      return;
+    }
+
+    appState.setCalibrationReturnRoute(AppRoutes.farmCrossingPreparation);
+
+    Navigator.of(context).pushNamed(AppRoutes.calibrationStep1);
+  }
+
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
@@ -96,17 +110,18 @@ class GamesMenuScreen extends StatelessWidget {
             ),
             const SizedBox(height: 18),
             _GameCard(
-              title: 'Burbujas Visuales',
-              subtitle: 'Idea futura',
+              title: 'Cruza la Granja',
+              subtitle: 'Nuevo juego',
               description:
-                  'Juego planeado para trabajar seguimiento visual con estímulos rojo-verde.',
-              icon: Icons.bubble_chart,
-              color: Colors.grey,
+                  'Ayuda a la gallina a cruzar la carretera evitando vehículos y recogiendo objetivos.',
+              icon: Icons.emoji_nature,
+              color: Colors.orange,
               completedSessions: 0,
-              levelText: 'Bloqueado',
-              buttonText: 'No disponible',
-              locked: true,
-              onTap: null,
+              levelText: 'Nivel 1 disponible',
+              buttonText: 'Iniciar juego',
+              onTap: () {
+                startFarmCrossing(context);
+              },
             ),
             const SizedBox(height: 24),
             const _InfoCard(),
@@ -198,7 +213,6 @@ class _GameCard extends StatelessWidget {
     required this.levelText,
     required this.buttonText,
     required this.onTap,
-    this.locked = false,
   });
 
   final String title;
@@ -210,11 +224,10 @@ class _GameCard extends StatelessWidget {
   final String levelText;
   final String buttonText;
   final VoidCallback? onTap;
-  final bool locked;
 
   @override
   Widget build(BuildContext context) {
-    final effectiveColor = locked ? Colors.grey : color;
+    final effectiveColor = color;
 
     return Container(
       width: double.infinity,
@@ -242,11 +255,7 @@ class _GameCard extends StatelessWidget {
                   color: effectiveColor.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(22),
                 ),
-                child: Icon(
-                  locked ? Icons.lock : icon,
-                  color: effectiveColor,
-                  size: 34,
-                ),
+                child: Icon(icon, color: effectiveColor, size: 34),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -309,7 +318,7 @@ class _GameCard extends StatelessWidget {
             width: double.infinity,
             height: 54,
             child: FilledButton(
-              onPressed: locked ? null : onTap,
+              onPressed: onTap,
               child: Text(
                 buttonText,
                 style: const TextStyle(

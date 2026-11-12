@@ -19,6 +19,11 @@ import '../games/break_the_row/break_the_row_preparation_screen.dart';
 import '../games/break_the_row/break_the_row_results_screen.dart';
 import '../games/break_the_row/break_the_row_screen.dart';
 
+import '../games/farm_crossing/farm_crossing_level.dart';
+import '../games/farm_crossing/farm_crossing_preparation_screen.dart';
+import '../games/farm_crossing/farm_crossing_screen.dart';
+
+import '../features/doctor_results/doctor_login_screen.dart';
 import '../features/doctor_results/doctor_patients_screen.dart';
 
 class VisionKidsApp extends StatelessWidget {
@@ -51,6 +56,19 @@ class VisionKidsApp extends StatelessWidget {
         AppRoutes.breakTheRow: (_) => const BreakTheRowScreen(),
         AppRoutes.breakTheRowResults: (_) => const BreakTheRowResultsScreen(),
 
+        AppRoutes.farmCrossingPreparation: (_) =>
+            const FarmCrossingPreparationScreen(),
+
+        AppRoutes.farmCrossing: (context) {
+          final difficulty =
+              ModalRoute.of(context)?.settings.arguments
+                  as FarmCrossingDifficulty? ??
+              FarmCrossingDifficulty.basic;
+
+          return FarmCrossingScreen(difficulty: difficulty);
+        },
+
+        AppRoutes.doctorLogin: (_) => const DoctorLoginScreen(),
         AppRoutes.doctorPatients: (_) => const DoctorPatientsScreen(),
       },
     );

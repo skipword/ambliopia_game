@@ -13,6 +13,7 @@ dependencies:
   flame_audio: ^2.12.1
   flutter:
     sdk: flutter
+  http: ^1.6.0
   provider: ^6.1.5+1
   shared_preferences: ^2.5.5
   supabase_flutter: ^2.18.0
@@ -31,3 +32,8 @@ flutter:
     - assets/audio/piano_hit.wav
     - assets/audio/piano_miss.wav
     - assets/audio/break_the_row_music.mp3
+    - assets/audio/piano_music.mp3
+    - assets/audio/farm_music.mp3
+    - assets/audio/farm_objective.wav
+    - assets/audio/farm_collision.wav
+    - assets/audio/farm_goal.wav

@@ -9,6 +9,44 @@ import '../../core/widgets/app_bottom_nav.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
+  void startPianoVisual(BuildContext context) {
+    final appState = context.read<AppState>();
+
+    if (appState.hasCompletedCalibration) {
+      Navigator.of(context).pushNamed(AppRoutes.pianoPreparation);
+      return;
+    }
+
+    appState.setCalibrationReturnRoute(AppRoutes.pianoPreparation);
+
+    Navigator.of(context).pushNamed(AppRoutes.calibrationStep1);
+  }
+
+  void startBreakTheRow(BuildContext context) {
+    final appState = context.read<AppState>();
+
+    if (appState.hasCompletedCalibration) {
+      Navigator.of(context).pushNamed(AppRoutes.breakTheRowPreparation);
+      return;
+    }
+
+    appState.setCalibrationReturnRoute(AppRoutes.breakTheRowPreparation);
+
+    Navigator.of(context).pushNamed(AppRoutes.calibrationStep1);
+  }
+
+  void startFarmCrossing(BuildContext context) {
+    final appState = context.read<AppState>();
+
+    if (appState.hasCompletedCalibration) {
+      Navigator.of(context).pushNamed(AppRoutes.farmCrossingPreparation);
+      return;
+    }
+
+    appState.setCalibrationReturnRoute(AppRoutes.farmCrossingPreparation);
+
+    Navigator.of(context).pushNamed(AppRoutes.calibrationStep1);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,9 +133,9 @@ class HomeScreen extends StatelessWidget {
               description:
                   'Toca las fichas cuando lleguen a la zona correcta y completa tu sesión visual.',
               icon: Icons.piano,
-              buttonText: 'Ir al juego',
+              buttonText: 'Iniciar juego',
               onTap: () {
-                Navigator.of(context).pushNamed(AppRoutes.games);
+                startPianoVisual(context);
               },
             ),
             const SizedBox(height: 16),
@@ -106,9 +144,20 @@ class HomeScreen extends StatelessWidget {
               description:
                   'Mueve, rota y baja piezas para completar líneas horizontales.',
               icon: Icons.grid_view,
-              buttonText: 'Ir al juego',
+              buttonText: 'Iniciar juego',
               onTap: () {
-                Navigator.of(context).pushNamed(AppRoutes.games);
+                startBreakTheRow(context);
+              },
+            ),
+            const SizedBox(height: 16),
+            _TrainingCard(
+              title: 'Cruza la Granja',
+              description:
+                  'Ayuda a la gallina a cruzar la carretera evitando vehículos y recogiendo objetivos.',
+              icon: Icons.emoji_nature,
+              buttonText: 'Iniciar juego',
+              onTap: () {
+                startFarmCrossing(context);
               },
             ),
             const SizedBox(height: 24),

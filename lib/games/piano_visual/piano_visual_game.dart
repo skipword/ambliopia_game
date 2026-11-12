@@ -19,6 +19,7 @@ class PianoVisualGame extends FlameGame {
   });
 
   static const int maxMisses = 3;
+  static const String backgroundMusic = 'piano_music.mp3';
 
   final double redContrast;
   final double greenContrast;
@@ -76,6 +77,26 @@ class PianoVisualGame extends FlameGame {
     };
   }
 
+  double get speedMultiplier {
+    if (elapsedSeconds < 20) {
+      return 1.00;
+    }
+
+    if (elapsedSeconds < 40) {
+      return 1.10;
+    }
+
+    if (elapsedSeconds < 60) {
+      return 1.20;
+    }
+
+    if (elapsedSeconds < 90) {
+      return 1.30;
+    }
+
+    return 1.40;
+  }
+
   @override
   Color backgroundColor() {
     return const Color(0xFF111827);
@@ -85,7 +106,13 @@ class PianoVisualGame extends FlameGame {
   Future<void> onLoad() async {
     await super.onLoad();
 
-    await FlameAudio.audioCache.loadAll(['piano_hit.wav', 'piano_miss.wav']);
+    await FlameAudio.audioCache.loadAll([
+      'piano_hit.wav',
+      'piano_miss.wav',
+      backgroundMusic,
+    ]);
+
+    FlameAudio.bgm.initialize();
 
     addLanes();
     addHitZone();
@@ -110,6 +137,8 @@ class PianoVisualGame extends FlameGame {
     if (hasStarted) return;
 
     hasStarted = true;
+
+    FlameAudio.bgm.play(backgroundMusic, volume: 0.22);
 
     spawnTile();
   }
@@ -381,6 +410,8 @@ class PianoVisualGame extends FlameGame {
 
     isSessionFinished = true;
 
+    FlameAudio.bgm.stop();
+
     for (final tile in children.whereType<PianoTileComponent>().toList()) {
       tile.removeFromParent();
     }
@@ -397,6 +428,15 @@ class PianoVisualGame extends FlameGame {
     );
 
     return _finalResult!;
+  }
+
+  @override
+  void onRemove() {
+    FlameAudio.bgm.stop();
+
+    stats.dispose();
+
+    super.onRemove();
   }
 }
 
@@ -444,7 +484,7 @@ class PianoTileComponent extends PositionComponent
   void update(double dt) {
     super.update(dt);
 
-    y += speed * dt;
+    y += speed * game.speedMultiplier * dt;
 
     if (kind == PianoTileKind.hold && isHolding && !wasTouched && !wasMissed) {
       holdElapsedSeconds += dt;

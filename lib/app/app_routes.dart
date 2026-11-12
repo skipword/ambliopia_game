@@ -17,6 +17,11 @@ class AppRoutes {
   static const breakTheRow = '/games/break-the-row';
   static const breakTheRowResults = '/games/break-the-row/results';
 
+  static const farmCrossingPreparation = '/games/farm-crossing/preparation';
+
+  static const farmCrossing = '/games/farm-crossing';
+
+  static const doctorLogin = '/doctor/login';
   static const doctorResults = '/doctor/results';
   static const doctorPatients = '/doctor/patients';
 }

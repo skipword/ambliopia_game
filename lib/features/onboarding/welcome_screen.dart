@@ -11,7 +11,7 @@ class WelcomeScreen extends StatelessWidget {
   }
 
   void openProfessionalArea(BuildContext context) {
-    Navigator.of(context).pushNamed(AppRoutes.doctorPatients);
+    Navigator.of(context).pushNamed(AppRoutes.doctorLogin);
   }
 
   @override
