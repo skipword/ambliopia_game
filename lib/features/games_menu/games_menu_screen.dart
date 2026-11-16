@@ -47,6 +47,19 @@ class GamesMenuScreen extends StatelessWidget {
     Navigator.of(context).pushNamed(AppRoutes.calibrationStep1);
   }
 
+  void startBalloonPop(BuildContext context) {
+    final appState = context.read<AppState>();
+
+    if (appState.hasCompletedCalibration) {
+      Navigator.of(context).pushNamed(AppRoutes.balloonPreparation);
+      return;
+    }
+
+    appState.setCalibrationReturnRoute(AppRoutes.balloonPreparation);
+
+    Navigator.of(context).pushNamed(AppRoutes.calibrationStep1);
+  }
+
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
@@ -124,6 +137,20 @@ class GamesMenuScreen extends StatelessWidget {
               },
             ),
             const SizedBox(height: 24),
+            _GameCard(
+              title: 'Explota los Globos',
+              subtitle: 'Juego relajado',
+              description:
+                  'Explota globos rojos y verdes antes de que salgan de la pantalla.',
+              icon: Icons.bubble_chart,
+              color: AppColors.purple,
+              completedSessions: 0,
+              levelText: '3 niveles disponibles',
+              buttonText: 'Iniciar juego',
+              onTap: () {
+                startBalloonPop(context);
+              },
+            ),
             const _InfoCard(),
             const SizedBox(height: 24),
           ],

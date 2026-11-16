@@ -21,6 +21,12 @@ class AppRoutes {
 
   static const farmCrossing = '/games/farm-crossing';
 
+  static const balloonPreparation = '/games/balloon-pop/preparation';
+
+  static const balloonPop = '/games/balloon-pop';
+
+  static const balloonResults = '/games/balloon-pop/results';
+
   static const doctorLogin = '/doctor/login';
   static const doctorResults = '/doctor/results';
   static const doctorPatients = '/doctor/patients';

@@ -29,11 +29,10 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/audio/music/
     - assets/audio/piano_hit.wav
     - assets/audio/piano_miss.wav
-    - assets/audio/break_the_row_music.mp3
-    - assets/audio/piano_music.mp3
-    - assets/audio/farm_music.mp3
     - assets/audio/farm_objective.wav
-    - assets/audio/farm_collision.wav
     - assets/audio/farm_goal.wav
+    - assets/audio/farm_collision_crush.mp3
+    - assets/audio/balloon_pop.mp3

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../core/state/app_state.dart';
 import '../../app/app_routes.dart';
 import '../../app/app_theme.dart';
 
@@ -7,7 +9,19 @@ class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
 
   void startSession(BuildContext context) {
-    Navigator.of(context).pushNamed(AppRoutes.patientData);
+    final appState = context.read<AppState>();
+
+    if (!appState.hasPatientData) {
+      Navigator.of(context).pushNamed(AppRoutes.patientData);
+      return;
+    }
+
+    if (!appState.hasOcularConfiguration) {
+      Navigator.of(context).pushNamed(AppRoutes.ocularConfig);
+      return;
+    }
+
+    Navigator.of(context).pushNamed(AppRoutes.home);
   }
 
   void openProfessionalArea(BuildContext context) {
@@ -21,6 +35,7 @@ class WelcomeScreen extends StatelessWidget {
         .clamp(210.0, 290.0)
         .toDouble();
 
+    final appState = context.watch<AppState>();
     return Scaffold(
       body: SafeArea(
         child: ListView(
@@ -130,9 +145,14 @@ class WelcomeScreen extends StatelessWidget {
                   startSession(context);
                 },
                 icon: const Icon(Icons.sports_esports_rounded),
-                label: const Text(
-                  'Comenzar sesión',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                label: Text(
+                  appState.hasPatientData
+                      ? 'Continuar como ${appState.patientDisplayName}'
+                      : 'Comenzar sesión',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ),
             ),

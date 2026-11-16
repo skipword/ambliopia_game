@@ -4,6 +4,7 @@ import 'package:flame/game.dart';
 import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/services/game_music_service.dart';
 import 'farm_crossing_level.dart';
 import 'farm_crossing_session_result.dart';
 
@@ -51,11 +52,9 @@ class FarmCrossingGame extends FlameGame {
   static const int columnCount = 5;
   static const int maxLives = 3;
 
-  static const String backgroundMusic = 'farm_music.mp3';
-
   static const String objectiveSound = 'farm_objective.wav';
 
-  static const String collisionSound = 'farm_collision.wav';
+  static const String collisionSound = 'farm_collision_crush.mp3';
 
   static const String goalSound = 'farm_goal.wav';
 
@@ -126,15 +125,15 @@ class FarmCrossingGame extends FlameGame {
     await super.onLoad();
 
     await FlameAudio.audioCache.loadAll([
-      backgroundMusic,
       objectiveSound,
       collisionSound,
       goalSound,
     ]);
 
-    FlameAudio.bgm.initialize();
-
-    await FlameAudio.bgm.play(backgroundMusic, volume: 0.24);
+    GameMusicService.instance.playRandom(
+      moods: {GameMusicMood.playful},
+      volume: 0.24,
+    );
 
     _startNewSession();
     _spawnObjective();
@@ -393,7 +392,10 @@ class FarmCrossingGame extends FlameGame {
     _startNewSession();
     _spawnObjective();
 
-    FlameAudio.bgm.play(backgroundMusic, volume: 0.24);
+    GameMusicService.instance.playRandom(
+      moods: {GameMusicMood.playful},
+      volume: 0.24,
+    );
   }
 
   void _recordEvent({
@@ -419,13 +421,13 @@ class FarmCrossingGame extends FlameGame {
   FarmCrossingSessionResult finishSession(FarmCrossingEndReason reason) {
     final existing = _finalResult;
 
+    GameMusicService.instance.stop();
+
     if (existing != null) {
       return existing;
     }
 
     _sessionFinished = true;
-
-    FlameAudio.bgm.stop();
 
     final endedAt = DateTime.now();
 
@@ -591,7 +593,7 @@ class FarmCrossingGame extends FlameGame {
   void _registerCollision(int laneIndex) {
     collisions.value++;
 
-    FlameAudio.play(collisionSound, volume: 0.55);
+    FlameAudio.play(collisionSound, volume: 1.0);
 
     int? laneTimeMs;
 
@@ -1063,7 +1065,7 @@ class FarmCrossingGame extends FlameGame {
 
   @override
   void onRemove() {
-    FlameAudio.bgm.stop();
+    GameMusicService.instance.stop();
 
     position.dispose();
 

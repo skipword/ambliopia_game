@@ -23,6 +23,10 @@ import '../games/farm_crossing/farm_crossing_level.dart';
 import '../games/farm_crossing/farm_crossing_preparation_screen.dart';
 import '../games/farm_crossing/farm_crossing_screen.dart';
 
+import '../games/balloon_pop/balloon_pop_screen.dart';
+import '../games/balloon_pop/balloon_preparation_screen.dart';
+import '../games/balloon_pop/balloon_results_screen.dart';
+
 import '../features/doctor_results/doctor_login_screen.dart';
 import '../features/doctor_results/doctor_patients_screen.dart';
 
@@ -67,6 +71,12 @@ class VisionKidsApp extends StatelessWidget {
 
           return FarmCrossingScreen(difficulty: difficulty);
         },
+
+        AppRoutes.balloonPreparation: (_) => const BalloonPreparationScreen(),
+
+        AppRoutes.balloonPop: (_) => const BalloonPopScreen(),
+
+        AppRoutes.balloonResults: (_) => const BalloonResultsScreen(),
 
         AppRoutes.doctorLogin: (_) => const DoctorLoginScreen(),
         AppRoutes.doctorPatients: (_) => const DoctorPatientsScreen(),

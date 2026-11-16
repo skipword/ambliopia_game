@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flame_audio/flame_audio.dart';
 
 import '../../app/app_theme.dart';
+import '../../core/services/game_music_service.dart';
 import 'piano_level.dart';
 import 'piano_session_result.dart';
 
@@ -19,7 +20,6 @@ class PianoVisualGame extends FlameGame {
   });
 
   static const int maxMisses = 3;
-  static const String backgroundMusic = 'piano_music.mp3';
 
   final double redContrast;
   final double greenContrast;
@@ -83,18 +83,18 @@ class PianoVisualGame extends FlameGame {
     }
 
     if (elapsedSeconds < 40) {
-      return 1.10;
+      return 1.15;
     }
 
     if (elapsedSeconds < 60) {
-      return 1.20;
+      return 1.25;
     }
 
     if (elapsedSeconds < 90) {
-      return 1.30;
+      return 1.35;
     }
 
-    return 1.40;
+    return 1.45;
   }
 
   @override
@@ -106,13 +106,7 @@ class PianoVisualGame extends FlameGame {
   Future<void> onLoad() async {
     await super.onLoad();
 
-    await FlameAudio.audioCache.loadAll([
-      'piano_hit.wav',
-      'piano_miss.wav',
-      backgroundMusic,
-    ]);
-
-    FlameAudio.bgm.initialize();
+    await FlameAudio.audioCache.loadAll(['piano_hit.wav', 'piano_miss.wav']);
 
     addLanes();
     addHitZone();
@@ -138,7 +132,10 @@ class PianoVisualGame extends FlameGame {
 
     hasStarted = true;
 
-    FlameAudio.bgm.play(backgroundMusic, volume: 0.22);
+    GameMusicService.instance.playRandom(
+      moods: {GameMusicMood.calm, GameMusicMood.playful},
+      volume: 0.22,
+    );
 
     spawnTile();
   }
@@ -410,7 +407,7 @@ class PianoVisualGame extends FlameGame {
 
     isSessionFinished = true;
 
-    FlameAudio.bgm.stop();
+    GameMusicService.instance.stop();
 
     for (final tile in children.whereType<PianoTileComponent>().toList()) {
       tile.removeFromParent();
@@ -432,7 +429,7 @@ class PianoVisualGame extends FlameGame {
 
   @override
   void onRemove() {
-    FlameAudio.bgm.stop();
+    GameMusicService.instance.stop();
 
     stats.dispose();
 
