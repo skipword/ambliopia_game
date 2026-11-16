@@ -2,10 +2,36 @@ import 'package:flutter/material.dart';
 
 import '../../app/app_routes.dart';
 import '../../app/app_theme.dart';
+import '../../core/widgets/game_results_scaffold.dart';
 import 'road_visual_session_result.dart';
 
 class RoadVisualResultsScreen extends StatelessWidget {
   const RoadVisualResultsScreen({super.key});
+
+  int calculateStars(RoadVisualSessionResult result) {
+    final totalObjectives =
+        result.stats.objectivesCollected + result.stats.objectivesMissed;
+
+    if (totalObjectives == 0) {
+      return 1;
+    }
+
+    final accuracy = result.stats.objectivesCollected / totalObjectives;
+
+    if (result.stats.collisions >= 3) {
+      return 1;
+    }
+
+    if (accuracy >= 0.80 && result.stats.collisions <= 1) {
+      return 3;
+    }
+
+    if (accuracy >= 0.55) {
+      return 2;
+    }
+
+    return 1;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,169 +44,55 @@ class RoadVisualResultsScreen extends StatelessWidget {
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text('Resultados'),
-      ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(24),
-          children: [
-            const Icon(Icons.directions_car, color: AppColors.cyan, size: 72),
+    final stars = calculateStars(result);
 
-            const SizedBox(height: 16),
-
-            const Text(
-              '¡Ruta terminada!',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: AppColors.navy,
-                fontSize: 27,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-
-            const SizedBox(height: 6),
-
-            Text(
-              result.endReasonLabel,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.textMuted,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            _ResultCard(label: 'Puntuación', value: '${result.score}'),
-
-            const SizedBox(height: 12),
-
-            _ResultCard(
-              label: 'Objetivos rojos',
-              value:
-                  '${result.stats.objectivesCollected}'
-                  '/'
-                  '${result.stats.redTotal}',
-            ),
-
-            const SizedBox(height: 12),
-
-            _ResultCard(
-              label: 'Vehículos evitados',
-              value: '${result.stats.obstaclesAvoided}',
-            ),
-
-            const SizedBox(height: 12),
-
-            _ResultCard(
-              label: 'Colisiones',
-              value: '${result.stats.collisions}',
-            ),
-
-            const SizedBox(height: 12),
-
-            _ResultCard(
-              label: 'Cambios de carril',
-              value: '${result.stats.laneChanges}',
-            ),
-
-            const SizedBox(height: 24),
-
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF7ED),
-                borderRadius: BorderRadius.circular(22),
-              ),
-              child: Text(
-                result.mainObservation,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: AppColors.navy,
-                  fontSize: 15,
-                  height: 1.4,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 28),
-
-            SizedBox(
-              height: 56,
-              child: FilledButton.icon(
-                onPressed: () {
-                  Navigator.of(
-                    context,
-                  ).pushReplacementNamed(AppRoutes.roadVisualPreparation);
-                },
-                icon: const Icon(Icons.replay_rounded),
-                label: const Text('Jugar otra vez'),
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            SizedBox(
-              height: 52,
-              child: OutlinedButton(
-                onPressed: () {
-                  Navigator.of(
-                    context,
-                  ).popUntil((route) => route.settings.name == AppRoutes.home);
-                },
-                child: const Text('Volver al inicio'),
-              ),
-            ),
-          ],
-        ),
-      ),
+    debugPrint('===== RESULTADO TÉCNICO RUTA VISUAL =====');
+    debugPrint(
+      'Objetivos recogidos: '
+      '${result.stats.objectivesCollected}',
     );
-  }
-}
+    debugPrint(
+      'Objetivos perdidos: '
+      '${result.stats.objectivesMissed}',
+    );
+    debugPrint(
+      'Vehículos evitados: '
+      '${result.stats.obstaclesAvoided}',
+    );
+    debugPrint('Colisiones: ${result.stats.collisions}');
+    debugPrint(
+      'Cambios de carril: '
+      '${result.stats.laneChanges}',
+    );
+    debugPrint('=========================================');
 
-class _ResultCard extends StatelessWidget {
-  const _ResultCard({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Column(
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              color: AppColors.textMuted,
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-
-          const SizedBox(height: 5),
-
-          Text(
-            value,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: AppColors.navy,
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-        ],
-      ),
+    return GameResultsScaffold(
+      stars: stars,
+      icon: result.stats.collisions >= 3
+          ? Icons.favorite_rounded
+          : Icons.directions_car_rounded,
+      accentColor: AppColors.yellow,
+      title: stars == 3
+          ? '¡Gran carrera!'
+          : stars == 2
+          ? '¡Muy bien!'
+          : '¡Buen intento!',
+      message: 'Terminaste el reto de Ruta Visual.',
+      statusTitle: stars >= 2 ? '¡Buen recorrido!' : 'Sigue practicando',
+      statusMessage:
+          'Tu progreso quedó guardado '
+          'para que pueda revisarlo un adulto.',
+      onPlayAgain: () {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          AppRoutes.roadVisualPreparation,
+          (route) => route.settings.name == AppRoutes.home,
+        );
+      },
+      onHome: () {
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
+      },
     );
   }
 }

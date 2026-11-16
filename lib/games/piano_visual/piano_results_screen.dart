@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/app_routes.dart';
 import '../../app/app_theme.dart';
+import '../../core/widgets/game_results_scaffold.dart';
 import 'piano_session_result.dart';
 
 class PianoResultsScreen extends StatelessWidget {
@@ -10,215 +11,179 @@ class PianoResultsScreen extends StatelessWidget {
   int calculateStars(PianoSessionResult result) {
     final total = result.stats.total;
 
-    if (total == 0) return 1;
+    if (total == 0) {
+      return 1;
+    }
 
     final accuracy = result.stats.hits / total;
 
-    if (result.endedByMaxMisses) return 1;
+    if (result.endedByMaxMisses) {
+      return 1;
+    }
 
-    if (accuracy >= 0.85) return 3;
-    if (accuracy >= 0.60) return 2;
+    if (accuracy >= 0.85) {
+      return 3;
+    }
+
+    if (accuracy >= 0.60) {
+      return 2;
+    }
+
     return 1;
   }
 
   @override
   Widget build(BuildContext context) {
     final result =
-        ModalRoute.of(context)!.settings.arguments as PianoSessionResult;
+        ModalRoute.of(context)?.settings.arguments as PianoSessionResult?;
+
+    if (result == null) {
+      return _MissingResultScreen();
+    }
 
     final stars = calculateStars(result);
 
     debugPrint('===== RESULTADO TÉCNICO DE SESIÓN =====');
-    debugPrint('Motivo finalización: ${result.endReason.name}');
-    debugPrint('Aciertos: ${result.stats.hits}');
-    debugPrint('Errores: ${result.stats.misses}');
-    debugPrint('Rojo hits: ${result.stats.redHits}');
-    debugPrint('Rojo misses: ${result.stats.redMisses}');
-    debugPrint('Verde hits: ${result.stats.greenHits}');
-    debugPrint('Verde misses: ${result.stats.greenMisses}');
-    debugPrint('Duración: ${result.durationSeconds.round()} s');
-    debugPrint('Observación: ${result.mainObservation}');
-    debugPrint('Eventos registrados: ${result.events.length}');
+    debugPrint(
+      'Motivo finalización: '
+      '${result.endReason.name}',
+    );
+    debugPrint(
+      'Aciertos: '
+      '${result.stats.hits}',
+    );
+    debugPrint(
+      'Errores: '
+      '${result.stats.misses}',
+    );
+    debugPrint(
+      'Rojo hits: '
+      '${result.stats.redHits}',
+    );
+    debugPrint(
+      'Rojo misses: '
+      '${result.stats.redMisses}',
+    );
+    debugPrint(
+      'Verde hits: '
+      '${result.stats.greenHits}',
+    );
+    debugPrint(
+      'Verde misses: '
+      '${result.stats.greenMisses}',
+    );
+    debugPrint(
+      'Duración: '
+      '${result.durationSeconds.round()} s',
+    );
+    debugPrint(
+      'Observación: '
+      '${result.mainObservation}',
+    );
+    debugPrint(
+      'Eventos registrados: '
+      '${result.events.length}',
+    );
     debugPrint('======================================');
 
+    final completed = !result.endedByMaxMisses;
+
+    return GameResultsScaffold(
+      stars: stars,
+
+      icon: completed ? Icons.emoji_events_rounded : Icons.favorite_rounded,
+
+      accentColor: AppColors.yellow,
+
+      title: completed ? '¡Muy bien!' : '¡Buen intento!',
+
+      message: completed
+          ? 'Completaste Piano Visual.'
+          : 'Cada intento cuenta. '
+                'Puedes volver a jugar cuando quieras.',
+
+      statusTitle: completed ? 'Sesión completada' : 'Sigue practicando',
+
+      statusMessage:
+          'Tu progreso quedó guardado '
+          'para que pueda revisarlo un adulto.',
+
+      onPlayAgain: () {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          AppRoutes.pianoPreparation,
+          (route) => route.settings.name == AppRoutes.home,
+        );
+      },
+
+      onHome: () {
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
+      },
+    );
+  }
+}
+
+class _MissingResultScreen extends StatelessWidget {
+  const _MissingResultScreen();
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(28),
-              decoration: BoxDecoration(
-                color: AppColors.purple,
-                borderRadius: BorderRadius.circular(32),
-              ),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    result.endedByMaxMisses
-                        ? Icons.favorite
-                        : Icons.emoji_events,
-                    size: 86,
-                    color: AppColors.yellow,
+                  const Icon(
+                    Icons.sports_esports_rounded,
+                    color: AppColors.cyan,
+                    size: 64,
                   ),
                   const SizedBox(height: 18),
-                  Text(
-                    result.endedByMaxMisses
-                        ? '¡Buen intento!'
-                        : '¡Sesión completada!',
+                  const Text(
+                    'No hay una partida reciente',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 30,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    result.endedByMaxMisses
-                        ? 'Lo hiciste bien. Puedes volver a practicar cuando quieras.'
-                        : 'Lo hiciste muy bien. Sigue entrenando tu visión con diversión.',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 16,
-                      height: 1.4,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 26),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(3, (index) {
-                      final earned = index < stars;
-
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 5),
-                        child: Icon(
-                          earned ? Icons.star : Icons.star_border,
-                          size: 44,
-                          color: earned ? AppColors.yellow : Colors.white38,
-                        ),
-                      );
-                    }),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(26),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 16,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Icon(
-                    result.endedByMaxMisses
-                        ? Icons.refresh
-                        : Icons.check_circle,
-                    size: 54,
-                    color: result.endedByMaxMisses
-                        ? AppColors.cyan
-                        : AppColors.green,
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    result.endedByMaxMisses
-                        ? 'Puedes intentarlo otra vez'
-                        : '¡Buen trabajo!',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppColors.navy,
-                      fontSize: 24,
+                      fontSize: 22,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Tu sesión quedó registrada para que el adulto responsable pueda revisarla después.',
+                    'Vuelve al menú y comienza un nuevo juego.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: AppColors.textMuted,
-                      fontSize: 15,
+                      fontSize: 14,
                       height: 1.4,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(22),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEFF6FF),
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: const Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.lightbulb, color: AppColors.cyan, size: 34),
-                  SizedBox(width: 14),
-                  Expanded(
-                    child: Text(
-                      'Recuerda descansar los ojos después de jugar.',
-                      style: TextStyle(
-                        color: AppColors.navy,
-                        fontSize: 15,
-                        height: 1.4,
-                        fontWeight: FontWeight.w800,
-                      ),
+                  const SizedBox(height: 22),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 54,
+                    child: FilledButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).pushNamedAndRemoveUntil(
+                          AppRoutes.home,
+                          (route) => false,
+                        );
+                      },
+                      icon: const Icon(Icons.home_rounded),
+                      label: const Text('VOLVER A JUGAR'),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              height: 58,
-              child: FilledButton(
-                onPressed: () {
-                  Navigator.of(
-                    context,
-                  ).pushNamedAndRemoveUntil(AppRoutes.games, (route) => false);
-                },
-                child: const Text(
-                  'Jugar otra vez',
-                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              height: 54,
-              child: OutlinedButton(
-                onPressed: () {
-                  Navigator.of(
-                    context,
-                  ).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
-                },
-                child: const Text(
-                  'Volver al inicio',
-                  style: TextStyle(fontWeight: FontWeight.w800),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
+          ),
         ),
       ),
     );
