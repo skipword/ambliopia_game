@@ -4,7 +4,7 @@ enum StimulusResult { hit, miss }
 
 enum PianoTileKind { tap, hold }
 
-enum PianoEndReason { manual, maxMisses }
+enum PianoEndReason { manual, maxMisses, timeCompleted, targetHitsCompleted }
 
 class PianoStimulusEvent {
   const PianoStimulusEvent({

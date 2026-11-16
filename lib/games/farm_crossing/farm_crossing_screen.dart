@@ -22,6 +22,7 @@ class _FarmCrossingScreenState extends State<FarmCrossingScreen> {
   FarmCrossingGame? game;
 
   bool initialized = false;
+  bool clinicalResultSaved = false;
 
   @override
   void didChangeDependencies() {
@@ -54,10 +55,22 @@ class _FarmCrossingScreenState extends State<FarmCrossingScreen> {
   }
 
   void saveClinicalResult(FarmCrossingSessionResult result) {
+    if (clinicalResultSaved) {
+      return;
+    }
+
+    if (result.events.isEmpty) {
+      debugPrint('Sesión de Gallina en Ruta sin actividad: no se guarda.');
+
+      return;
+    }
+
     final appState = context.read<AppState>();
     final patient = appState.patient;
 
     if (patient == null) return;
+
+    clinicalResultSaved = true;
 
     final score =
         result.stats.roundsCompleted * 100 +
@@ -73,9 +86,9 @@ class _FarmCrossingScreenState extends State<FarmCrossingScreen> {
         endedAt: result.endedAt,
         durationSeconds: result.durationSeconds,
         score: score,
-        objectiveLabel: 'Cruces completados',
-        completedObjective: result.stats.roundsCompleted,
-        targetObjective: game?.config.targetCrossings ?? 0,
+        objectiveLabel: 'Objetivos recogidos',
+        completedObjective: result.stats.objectivesCollected,
+        targetObjective: game?.config.targetObjectives ?? 0,
 
         // Canal rojo:
         redSuccess: result.stats.objectivesCollected,
@@ -224,8 +237,7 @@ class _FarmCrossingScreenState extends State<FarmCrossingScreen> {
                             valueListenable: currentGame.roundsCompleted,
                             builder: (context, rounds, _) {
                               return Text(
-                                'Cruces: '
-                                '$rounds/${currentGame.config.targetCrossings}',
+                                'Cruces: $rounds',
                                 style: const TextStyle(
                                   color: AppColors.navy,
                                   fontWeight: FontWeight.w900,
@@ -238,7 +250,8 @@ class _FarmCrossingScreenState extends State<FarmCrossingScreen> {
                           valueListenable: currentGame.objectivesCollected,
                           builder: (context, collected, _) {
                             return Text(
-                              'Objetivos: $collected',
+                              'Objetivos: '
+                              '$collected/${currentGame.config.targetObjectives}',
                               style: const TextStyle(
                                 color: AppColors.navy,
                                 fontWeight: FontWeight.w900,
@@ -386,7 +399,7 @@ class _FarmCrossingScreenState extends State<FarmCrossingScreen> {
                               builder: (context, collected, _) {
                                 return Text(
                                   'Objetivos recogidos: '
-                                  '$collected/${currentGame.config.targetCrossings}',
+                                  '$collected/${currentGame.config.targetObjectives}',
                                   style: const TextStyle(
                                     color: AppColors.navy,
                                     fontSize: 16,

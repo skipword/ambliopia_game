@@ -406,7 +406,7 @@ class _GeneralSummaryCard extends StatelessWidget {
           _SummaryRow(
             icon: Icons.grid_view_rounded,
             label: 'Juegos utilizados',
-            value: '$games de 3',
+            value: '$games de 5',
           ),
         ],
       ),
@@ -694,6 +694,112 @@ class _WeeklyGameCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           _DetailRow(label: 'Colisiones', value: '${group.greenErrors}'),
+        ];
+
+      case ClinicalGameType.balloonPop:
+        return [
+          const Text(
+            'Explota los Globos',
+            style: TextStyle(
+              color: AppColors.navy,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          _DetailRow(
+            label: 'Globos rojos explotados',
+            value: '${group.redSuccess}',
+          ),
+
+          const SizedBox(height: 8),
+
+          _DetailRow(
+            label: 'Globos rojos escapados',
+            value: '${group.redErrors}',
+          ),
+
+          const SizedBox(height: 8),
+
+          _DetailRow(
+            label: 'Globos verdes explotados',
+            value: '${group.greenSuccess}',
+          ),
+
+          const SizedBox(height: 8),
+
+          _DetailRow(
+            label: 'Globos verdes escapados',
+            value: '${group.greenErrors}',
+          ),
+
+          const SizedBox(height: 14),
+
+          _AccuracyBar(
+            label: 'Precisión estímulo rojo',
+            value: group.redAccuracy,
+            color: AppColors.red,
+          ),
+
+          const SizedBox(height: 12),
+
+          _AccuracyBar(
+            label: 'Precisión estímulo verde',
+            value: group.greenAccuracy,
+            color: AppColors.green,
+          ),
+        ];
+
+      case ClinicalGameType.roadVisual:
+        return [
+          const Text(
+            'Ruta Visual',
+            style: TextStyle(
+              color: AppColors.navy,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          _DetailRow(
+            label: 'Objetivos rojos recogidos',
+            value: '${group.redSuccess}',
+          ),
+
+          const SizedBox(height: 8),
+
+          _DetailRow(
+            label: 'Objetivos rojos perdidos',
+            value: '${group.redErrors}',
+          ),
+
+          const SizedBox(height: 8),
+
+          _DetailRow(
+            label: 'Vehículos verdes evitados',
+            value: '${group.greenSuccess}',
+          ),
+
+          const SizedBox(height: 8),
+
+          _DetailRow(label: 'Colisiones', value: '${group.greenErrors}'),
+
+          const SizedBox(height: 14),
+
+          _AccuracyBar(
+            label: 'Éxito estímulo rojo',
+            value: group.redAccuracy,
+            color: AppColors.red,
+          ),
+
+          const SizedBox(height: 12),
+
+          _AccuracyBar(
+            label: 'Éxito estímulo verde',
+            value: group.greenAccuracy,
+            color: AppColors.green,
+          ),
         ];
     }
   }

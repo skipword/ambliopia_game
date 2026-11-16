@@ -3,19 +3,22 @@ import 'package:provider/provider.dart';
 
 import '../../app/app_routes.dart';
 import '../../app/app_theme.dart';
-import '../../core/models/eye.dart';
+import '../../core/services/supabase_service.dart';
 import '../../core/state/app_state.dart';
 import '../../core/widgets/app_bottom_nav.dart';
-import '../../core/services/supabase_service.dart';
+import '../../core/models/eye.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   Future<void> showEditNameDialog(BuildContext context) async {
     final appState = context.read<AppState>();
+
     final patient = appState.patient;
 
-    if (patient == null) return;
+    if (patient == null) {
+      return;
+    }
 
     final newName = await showDialog<String>(
       context: context,
@@ -24,12 +27,14 @@ class ProfileScreen extends StatelessWidget {
       },
     );
 
-    if (newName == null || newName.trim().isEmpty) return;
+    if (newName == null || newName.trim().isEmpty) {
+      return;
+    }
 
     try {
       await SupabaseService.instance.updatePatientName(
         patientCode: patient.code,
-        name: newName,
+        name: newName.trim(),
       );
 
       appState.setPatient(
@@ -38,16 +43,20 @@ class ProfileScreen extends StatelessWidget {
         age: patient.age,
       );
 
-      if (!context.mounted) return;
+      if (!context.mounted) {
+        return;
+      }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nombre actualizado correctamente')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Nombre actualizado')));
     } catch (error) {
-      if (!context.mounted) return;
+      if (!context.mounted) {
+        return;
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No fue posible actualizar el nombre: $error')),
+        const SnackBar(content: Text('No fue posible actualizar el nombre.')),
       );
     }
   }
@@ -56,6 +65,7 @@ class ProfileScreen extends StatelessWidget {
     final appState = context.read<AppState>();
 
     appState.setCalibrationReturnRoute(AppRoutes.profile);
+
     Navigator.of(context).pushNamed(AppRoutes.calibrationStep1);
   }
 
@@ -64,296 +74,429 @@ class ProfileScreen extends StatelessWidget {
     final appState = context.watch<AppState>();
 
     final patient = appState.patient;
-    final redEye = appState.redLensEye?.label ?? 'No configurado';
-    final greenEye = appState.greenLensEye?.label ?? 'No configurado';
+
+    final redEye = appState.redLensEye?.label ?? 'Sin configurar';
+
+    final greenEye = appState.greenLensEye?.label ?? 'Sin configurar';
 
     final redContrast = (appState.redContrast * 100).round();
+
     final greenContrast = (appState.greenContrast * 100).round();
 
     return Scaffold(
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-          children: [
-            Text('Perfil', style: Theme.of(context).textTheme.headlineMedium),
-            const SizedBox(height: 8),
-            const Text(
-              'Información del paciente y configuración visual.',
-              style: TextStyle(
-                color: AppColors.textMuted,
-                fontSize: 16,
-                height: 1.4,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 24),
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 680),
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 22, 20, 28),
+              children: [
+                Text(
+                  'Perfil',
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
 
-            // Datos del paciente
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: AppColors.purple,
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: Column(
-                children: [
-                  const Icon(Icons.person, color: Colors.white, size: 64),
-                  const SizedBox(height: 16),
-                  Text(
-                    patient?.name ?? 'Paciente',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.w900,
-                    ),
+                const SizedBox(height: 5),
+
+                const Text(
+                  'Datos y configuración visual.',
+                  style: TextStyle(
+                    color: AppColors.textMuted,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    patient == null
-                        ? 'Sin datos registrados'
-                        : '${patient.code} · ${patient.age} años',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: FilledButton.icon(
-                      onPressed: patient == null
-                          ? null
-                          : () {
-                              showEditNameDialog(context);
-                            },
-                      icon: const Icon(Icons.edit),
-                      label: const Text(
-                        'Editar nombre',
-                        style: TextStyle(fontWeight: FontWeight.w900),
+                ),
+
+                const SizedBox(height: 20),
+
+                _PatientCard(
+                  name: patient?.name ?? 'Paciente',
+                  subtitle: patient == null
+                      ? 'Sin datos registrados'
+                      : '${patient.code} · '
+                            '${patient.age} años',
+                  onEdit: patient == null
+                      ? null
+                      : () {
+                          showEditNameDialog(context);
+                        },
+                ),
+
+                const SizedBox(height: 22),
+
+                const _SectionTitle(
+                  title: 'Configuración visual',
+                  icon: Icons.visibility_rounded,
+                ),
+
+                const SizedBox(height: 12),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: _EyeCard(
+                        title: 'Lente rojo',
+                        value: redEye,
+                        color: AppColors.red,
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
 
-            const SizedBox(height: 24),
+                    const SizedBox(width: 12),
 
-            _SectionTitle(title: 'Configuración ocular'),
-            const SizedBox(height: 14),
-            _InfoCard(
-              icon: Icons.visibility,
-              title: 'Gafas rojo-verde',
-              children: [
-                _InfoRow(
-                  color: AppColors.red,
-                  label: 'Lente rojo',
-                  value: redEye,
+                    Expanded(
+                      child: _EyeCard(
+                        title: 'Lente verde',
+                        value: greenEye,
+                        color: AppColors.green,
+                      ),
+                    ),
+                  ],
                 ),
+
+                const SizedBox(height: 14),
+
+                _ContrastCard(
+                  redContrast: redContrast,
+                  greenContrast: greenContrast,
+                ),
+
+                const SizedBox(height: 22),
+
+                const _SectionTitle(
+                  title: 'Calibración',
+                  icon: Icons.tune_rounded,
+                ),
+
                 const SizedBox(height: 12),
-                _InfoRow(
-                  color: AppColors.green,
-                  label: 'Lente verde',
-                  value: greenEye,
+
+                _CalibrationCard(
+                  calibrated: appState.hasCompletedCalibration,
+                  onRecalibrate: () {
+                    recalibrate(context);
+                  },
+                ),
+
+                const SizedBox(height: 18),
+
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 15,
+                    vertical: 13,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.softBlue,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: const Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.shield_outlined,
+                        color: AppColors.cyan,
+                        size: 22,
+                      ),
+
+                      SizedBox(width: 10),
+
+                      Expanded(
+                        child: Text(
+                          'Los cambios de configuración visual deben realizarse con acompañamiento de un adulto.',
+                          style: TextStyle(
+                            color: AppColors.navy,
+                            fontSize: 12.5,
+                            height: 1.35,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+      bottomNavigationBar: const AppBottomNav(currentIndex: 2),
+    );
+  }
+}
 
-            const SizedBox(height: 18),
+class _PatientCard extends StatelessWidget {
+  const _PatientCard({
+    required this.name,
+    required this.subtitle,
+    required this.onEdit,
+  });
 
-            _InfoCard(
-              icon: appState.hasCompletedCalibration
-                  ? Icons.check_circle
-                  : Icons.warning_amber_rounded,
-              iconColor: appState.hasCompletedCalibration
-                  ? AppColors.green
-                  : Colors.orange,
-              title: 'Estado de calibración',
+  final String name;
+  final String subtitle;
+  final VoidCallback? onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.purple,
+        borderRadius: BorderRadius.circular(26),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 62,
+            height: 62,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.14),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.person_rounded,
+              color: Colors.white,
+              size: 35,
+            ),
+          ),
+
+          const SizedBox(width: 15),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  appState.hasCompletedCalibration
-                      ? 'La calibración está completada.'
-                      : 'La calibración aún no está completada.',
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: AppColors.navy,
-                    fontSize: 15,
-                    height: 1.4,
+                    color: Colors.white,
+                    fontSize: 23,
+                    height: 1.1,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+
+                const SizedBox(height: 5),
+
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      recalibrate(context);
-                    },
-                    icon: const Icon(Icons.settings),
-                    label: const Text(
-                      'Recalibrar gafas',
-                      style: TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                  ),
-                ),
               ],
             ),
+          ),
 
-            const SizedBox(height: 18),
-
-            _InfoCard(
-              icon: Icons.tune,
-              title: 'Contraste actual',
-              children: [
-                _ContrastRow(
-                  color: AppColors.red,
-                  label: 'Rojo',
-                  value: '$redContrast%',
-                ),
-                const SizedBox(height: 12),
-                _ContrastRow(
-                  color: AppColors.green,
-                  label: 'Verde',
-                  value: '$greenContrast%',
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
-
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEFF6FF),
-                borderRadius: BorderRadius.circular(24),
+          if (onEdit != null)
+            IconButton(
+              onPressed: onEdit,
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.white.withValues(alpha: 0.13),
+                foregroundColor: Colors.white,
               ),
-              child: const Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.info_outline, color: AppColors.cyan, size: 30),
-                  SizedBox(width: 14),
-                  Expanded(
-                    child: Text(
-                      'La configuración visual debe realizarse con acompañamiento de un adulto y mantenerse acorde a las indicaciones del profesional',
-                      style: TextStyle(
-                        color: AppColors.navy,
-                        fontSize: 15,
-                        height: 1.4,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              tooltip: 'Editar nombre',
+              icon: const Icon(Icons.edit_rounded, size: 21),
             ),
-
-            const SizedBox(height: 24),
-          ],
-        ),
+        ],
       ),
-      bottomNavigationBar: const AppBottomNav(currentIndex: 3),
     );
   }
 }
 
 class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.title});
+  const _SectionTitle({required this.title, required this.icon});
 
   final String title;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
-    return Text(title, style: Theme.of(context).textTheme.titleLarge);
+    return Row(
+      children: [
+        Icon(icon, color: AppColors.cyan, size: 22),
+
+        const SizedBox(width: 8),
+
+        Text(
+          title,
+          style: const TextStyle(
+            color: AppColors.navy,
+            fontSize: 17,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ],
+    );
   }
 }
 
-class _InfoCard extends StatelessWidget {
-  const _InfoCard({
-    required this.icon,
+class _EyeCard extends StatelessWidget {
+  const _EyeCard({
     required this.title,
-    required this.children,
-    this.iconColor = AppColors.cyan,
+    required this.value,
+    required this.color,
   });
 
-  final IconData icon;
   final String title;
-  final List<Widget> children;
-  final Color iconColor;
+  final String value;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(22),
+      constraints: const BoxConstraints(minHeight: 108),
+      padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(26),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.10)),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, color: iconColor, size: 32),
-              const SizedBox(width: 14),
+              Container(
+                width: 13,
+                height: 13,
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              ),
+
+              const SizedBox(width: 7),
+
               Expanded(
                 child: Text(
                   title,
                   style: const TextStyle(
-                    color: AppColors.navy,
-                    fontSize: 19,
-                    fontWeight: FontWeight.w900,
+                    color: AppColors.textMuted,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 18),
-          ...children,
+
+          const SizedBox(height: 14),
+
+          Text(
+            value,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: AppColors.navy,
+              fontSize: 16,
+              height: 1.15,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.color,
+class _ContrastCard extends StatelessWidget {
+  const _ContrastCard({required this.redContrast, required this.greenContrast});
+
+  final int redContrast;
+  final int greenContrast;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Contraste actual',
+            style: TextStyle(
+              color: AppColors.navy,
+              fontSize: 14,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          _ContrastLine(
+            label: 'Rojo',
+            value: redContrast,
+            color: AppColors.red,
+          ),
+
+          const SizedBox(height: 12),
+
+          _ContrastLine(
+            label: 'Verde',
+            value: greenContrast,
+            color: AppColors.green,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ContrastLine extends StatelessWidget {
+  const _ContrastLine({
     required this.label,
     required this.value,
+    required this.color,
   });
 
-  final Color color;
   final String label;
-  final String value;
+  final int value;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(Icons.circle, color: color, size: 18),
-        const SizedBox(width: 12),
-        Expanded(
+        SizedBox(
+          width: 54,
           child: Text(
-            '$label → $value',
+            label,
             style: const TextStyle(
-              color: AppColors.navy,
-              fontSize: 16,
-              height: 1.3,
+              color: AppColors.textMuted,
+              fontSize: 12,
               fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: LinearProgressIndicator(
+              value: value / 100,
+              minHeight: 8,
+              backgroundColor: color.withValues(alpha: 0.10),
+              valueColor: AlwaysStoppedAnimation<Color>(color),
+            ),
+          ),
+        ),
+
+        const SizedBox(width: 12),
+
+        SizedBox(
+          width: 38,
+          child: Text(
+            '$value%',
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              color: color,
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
             ),
           ),
         ),
@@ -362,42 +505,77 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
-class _ContrastRow extends StatelessWidget {
-  const _ContrastRow({
-    required this.color,
-    required this.label,
-    required this.value,
+class _CalibrationCard extends StatelessWidget {
+  const _CalibrationCard({
+    required this.calibrated,
+    required this.onRecalibrate,
   });
 
-  final Color color;
-  final String label;
-  final String value;
+  final bool calibrated;
+  final VoidCallback onRecalibrate;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(Icons.circle, color: color, size: 18),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(
-              color: AppColors.navy,
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
+    final accent = calibrated
+        ? const Color(0xFF4CAF75)
+        : const Color(0xFFE99A50);
+
+    final background = calibrated ? AppColors.softGreen : AppColors.softOrange;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 43,
+            height: 43,
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: 0.14),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              calibrated ? Icons.check_rounded : Icons.warning_amber_rounded,
+              color: accent,
             ),
           ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            color: color,
-            fontSize: 16,
-            fontWeight: FontWeight.w900,
+
+          const SizedBox(width: 12),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  calibrated ? 'Gafas calibradas' : 'Calibración pendiente',
+                  style: const TextStyle(
+                    color: AppColors.navy,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  calibrated ? 'Listas para jugar' : 'Calibra antes de jugar',
+                  style: const TextStyle(
+                    color: AppColors.textMuted,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+
+          TextButton(
+            onPressed: onRecalibrate,
+            child: Text(calibrated ? 'Recalibrar' : 'Calibrar'),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -430,7 +608,9 @@ class _EditNameDialogState extends State<_EditNameDialog> {
   void save() {
     final newName = controller.text.trim();
 
-    if (newName.isEmpty) return;
+    if (newName.isEmpty) {
+      return;
+    }
 
     Navigator.of(context).pop(newName);
   }
@@ -442,6 +622,7 @@ class _EditNameDialogState extends State<_EditNameDialog> {
       content: TextField(
         controller: controller,
         autofocus: true,
+        textCapitalization: TextCapitalization.words,
         decoration: const InputDecoration(labelText: 'Nombre del paciente'),
         onSubmitted: (_) {
           save();

@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../app/app_routes.dart';
 import '../../app/app_theme.dart';
 import '../../core/state/app_state.dart';
+import '../../core/models/clinical_session_summary.dart';
 import 'balloon_level.dart';
 import 'balloon_pop_game.dart';
 import 'balloon_session_result.dart';
@@ -22,6 +23,7 @@ class _BalloonPopScreenState extends State<BalloonPopScreen> {
   BalloonPopGame? game;
 
   bool initialized = false;
+  bool clinicalResultSaved = false;
 
   int? countdownValue = 3;
 
@@ -86,6 +88,8 @@ class _BalloonPopScreenState extends State<BalloonPopScreen> {
   }
 
   void goToResults(BalloonSessionResult result) {
+    saveClinicalResult(result);
+
     Future.microtask(() {
       if (!mounted) return;
 
@@ -105,6 +109,71 @@ class _BalloonPopScreenState extends State<BalloonPopScreen> {
     final result = currentGame.finishSession(BalloonEndReason.manual);
 
     goToResults(result);
+  }
+
+  void saveClinicalResult(BalloonSessionResult result) {
+    if (clinicalResultSaved) return;
+
+    final appState = context.read<AppState>();
+    final patient = appState.patient;
+
+    if (patient == null) return;
+
+    if (result.events.isEmpty || result.stats.total == 0) {
+      debugPrint('Sesión de Globos sin actividad: no se guarda.');
+      return;
+    }
+
+    clinicalResultSaved = true;
+
+    appState.addClinicalSession(
+      ClinicalSessionSummary(
+        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        patientId: patient.code,
+        gameType: ClinicalGameType.balloonPop,
+        gameName: 'Explota los Globos',
+        startedAt: result.startedAt,
+        endedAt: result.endedAt,
+        durationSeconds: result.durationSeconds,
+
+        // Puntuación sencilla y comparable:
+        // un punto por globo explotado.
+        score: result.stats.popped,
+
+        objectiveLabel: 'Globos explotados',
+        completedObjective: result.stats.popped,
+        targetObjective: result.stats.total,
+
+        // Canal rojo
+        redSuccess: result.stats.redPopped,
+        redErrors: result.stats.redEscaped,
+
+        // Canal verde
+        greenSuccess: result.stats.greenPopped,
+        greenErrors: result.stats.greenEscaped,
+
+        eventsCount: result.events.length,
+        observation: result.mainObservation,
+        averageReactionTimeMs: result.averageReactionTimeMs,
+      ),
+    );
+
+    debugPrint('===== RESULTADO TÉCNICO EXPLOTA LOS GLOBOS =====');
+    debugPrint('Explotados: ${result.stats.popped}');
+    debugPrint('Escapados: ${result.stats.escaped}');
+    debugPrint(
+      'Rojo: ${result.stats.redPopped} / '
+      '${result.stats.redEscaped}',
+    );
+    debugPrint(
+      'Verde: ${result.stats.greenPopped} / '
+      '${result.stats.greenEscaped}',
+    );
+    debugPrint(
+      'Reacción promedio: '
+      '${result.averageReactionTimeMs?.toStringAsFixed(1) ?? "N/A"} ms',
+    );
+    debugPrint('===============================================');
   }
 
   void exitGame() {

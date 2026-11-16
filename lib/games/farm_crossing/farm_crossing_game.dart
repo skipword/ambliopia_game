@@ -348,7 +348,7 @@ class FarmCrossingGame extends FlameGame {
     _activeLaneIndex = null;
     _activeLaneEnteredAtSeconds = null;
 
-    if (roundsCompleted.value >= config.targetCrossings) {
+    if (objectivesCollected.value >= config.targetObjectives) {
       sessionCompleted.value = true;
 
       finishSession(FarmCrossingEndReason.targetCompleted);

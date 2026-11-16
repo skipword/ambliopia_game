@@ -3,14 +3,17 @@ class FarmCrossingConfig {
     required this.name,
     required this.description,
     required this.laneCount,
-    required this.targetCrossings,
+    required this.targetObjectives,
     required this.vehicleSpeedMultiplier,
   });
 
   final String name;
   final String description;
+
   final int laneCount;
-  final int targetCrossings;
+
+  final int targetObjectives;
+
   final double vehicleSpeedMultiplier;
 }
 
@@ -24,7 +27,7 @@ extension FarmCrossingDifficultyConfig on FarmCrossingDifficulty {
           name: 'Nivel 1',
           description: '3 carriles y vehículos lentos.',
           laneCount: 3,
-          targetCrossings: 5,
+          targetObjectives: 10,
           vehicleSpeedMultiplier: 1.0,
         );
 
@@ -33,7 +36,7 @@ extension FarmCrossingDifficultyConfig on FarmCrossingDifficulty {
           name: 'Nivel 2',
           description: '4 carriles y mayor movimiento.',
           laneCount: 4,
-          targetCrossings: 5,
+          targetObjectives: 15,
           vehicleSpeedMultiplier: 1.25,
         );
 
@@ -42,7 +45,7 @@ extension FarmCrossingDifficultyConfig on FarmCrossingDifficulty {
           name: 'Nivel 3',
           description: '5 carriles y tráfico más rápido.',
           laneCount: 5,
-          targetCrossings: 5,
+          targetObjectives: 20,
           vehicleSpeedMultiplier: 1.5,
         );
     }

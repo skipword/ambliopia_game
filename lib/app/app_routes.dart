@@ -18,14 +18,15 @@ class AppRoutes {
   static const breakTheRowResults = '/games/break-the-row/results';
 
   static const farmCrossingPreparation = '/games/farm-crossing/preparation';
-
   static const farmCrossing = '/games/farm-crossing';
 
   static const balloonPreparation = '/games/balloon-pop/preparation';
-
   static const balloonPop = '/games/balloon-pop';
-
   static const balloonResults = '/games/balloon-pop/results';
+
+  static const roadVisualPreparation = '/games/road-visual/preparation';
+  static const roadVisual = '/games/road-visual';
+  static const roadVisualResults = '/games/road-visual/results';
 
   static const doctorLogin = '/doctor/login';
   static const doctorResults = '/doctor/results';

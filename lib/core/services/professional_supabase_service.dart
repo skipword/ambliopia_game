@@ -184,6 +184,12 @@ class ProfessionalSupabaseService {
       case 'farmCrossing':
         return ClinicalGameType.farmCrossing;
 
+      case 'balloonPop':
+        return ClinicalGameType.balloonPop;
+
+      case 'roadVisual':
+        return ClinicalGameType.roadVisual;
+
       default:
         throw FormatException('Tipo de juego desconocido: $value');
     }

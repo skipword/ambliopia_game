@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../app/app_routes.dart';
+import '../state/app_state.dart';
 
 class AppBottomNav extends StatelessWidget {
   const AppBottomNav({required this.currentIndex, super.key});
@@ -12,47 +14,46 @@ class AppBottomNav extends StatelessWidget {
     return SafeArea(
       top: false,
       child: NavigationBar(
-        height: 70,
+        height: 68,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         selectedIndex: currentIndex,
         onDestinationSelected: (index) {
-          if (index == currentIndex) return;
-
-          if (index == 0) {
-            Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+          if (index == currentIndex) {
+            return;
           }
 
-          if (index == 1) {
-            Navigator.of(context).pushReplacementNamed(AppRoutes.games);
-          }
+          switch (index) {
+            case 0:
+              Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+              break;
 
-          if (index == 2) {
-            Navigator.of(context).pushNamed(AppRoutes.calibrationStep1);
-          }
+            case 1:
+              final appState = context.read<AppState>();
 
-          if (index == 3) {
-            Navigator.of(context).pushReplacementNamed(AppRoutes.profile);
+              appState.setCalibrationReturnRoute(AppRoutes.home);
+
+              Navigator.of(context).pushNamed(AppRoutes.calibrationStep1);
+              break;
+
+            case 2:
+              Navigator.of(context).pushReplacementNamed(AppRoutes.profile);
+              break;
           }
         },
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Inicio',
-          ),
-          NavigationDestination(
             icon: Icon(Icons.sports_esports_outlined),
-            selectedIcon: Icon(Icons.sports_esports),
-            label: 'Juegos',
+            selectedIcon: Icon(Icons.sports_esports_rounded),
+            label: 'Jugar',
           ),
           NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
+            icon: Icon(Icons.visibility_outlined),
+            selectedIcon: Icon(Icons.visibility_rounded),
             label: 'Calibrar',
           ),
           NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
+            icon: Icon(Icons.person_outline_rounded),
+            selectedIcon: Icon(Icons.person_rounded),
             label: 'Perfil',
           ),
         ],

@@ -1,4 +1,10 @@
-enum ClinicalGameType { pianoVisual, breakTheRow, farmCrossing }
+enum ClinicalGameType {
+  pianoVisual,
+  breakTheRow,
+  farmCrossing,
+  balloonPop,
+  roadVisual,
+}
 
 class ClinicalSessionSummary {
   const ClinicalSessionSummary({

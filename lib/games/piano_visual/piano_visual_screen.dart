@@ -106,9 +106,9 @@ class _PianoVisualScreenState extends State<PianoVisualScreen> {
         endedAt: result.endedAt,
         durationSeconds: result.durationSeconds,
         score: result.stats.hits,
-        objectiveLabel: 'Estímulos respondidos',
+        objectiveLabel: 'Fichas completadas',
         completedObjective: result.stats.hits,
-        targetObjective: result.stats.total,
+        targetObjective: PianoVisualGame.targetHits,
         redSuccess: result.stats.redHits,
         redErrors: result.stats.redMisses,
         greenSuccess: result.stats.greenHits,
@@ -227,6 +227,21 @@ class _PianoVisualScreenState extends State<PianoVisualScreen> {
                                 fontWeight: FontWeight.w900,
                               ),
                             ),
+
+                            ValueListenableBuilder<double>(
+                              valueListenable: currentGame.remainingSeconds,
+                              builder: (context, remaining, _) {
+                                return Text(
+                                  '${remaining.ceil()} s',
+                                  style: const TextStyle(
+                                    color: AppColors.cyan,
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                );
+                              },
+                            ),
+
                             Row(
                               children: List.generate(
                                 PianoVisualGame.maxMisses,

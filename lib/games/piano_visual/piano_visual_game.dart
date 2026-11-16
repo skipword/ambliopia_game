@@ -20,16 +20,23 @@ class PianoVisualGame extends FlameGame {
   });
 
   static const int maxMisses = 3;
+  static const int targetHits = 40;
+  static const double maxDurationSeconds = 90;
 
   final double redContrast;
   final double greenContrast;
   final PianoDifficulty difficulty;
   final void Function(PianoSessionResult result) onSessionFinished;
 
-  final DateTime startedAt = DateTime.now();
   final Random random = Random();
 
   final ValueNotifier<PianoStats> stats = ValueNotifier(PianoStats.empty());
+
+  final ValueNotifier<double> remainingSeconds = ValueNotifier(
+    maxDurationSeconds,
+  );
+
+  DateTime? _startedAt;
 
   final List<PianoStimulusEvent> _events = [];
 
@@ -116,12 +123,25 @@ class PianoVisualGame extends FlameGame {
   void update(double dt) {
     super.update(dt);
 
-    if (!hasStarted || isSessionFinished) return;
+    if (!hasStarted || isSessionFinished) {
+      return;
+    }
 
     elapsedSeconds += dt;
     spawnTimer += dt;
 
-    if (spawnTimer >= spawnInterval) {
+    final remaining = maxDurationSeconds - elapsedSeconds;
+
+    remainingSeconds.value = remaining.clamp(0, maxDurationSeconds);
+
+    if (elapsedSeconds >= maxDurationSeconds) {
+      final result = finishSession(PianoEndReason.timeCompleted);
+
+      onSessionFinished(result);
+      return;
+    }
+
+    if (spawnTimer >= spawnInterval && hasLayout) {
       spawnTimer = 0;
       spawnTile();
     }
@@ -131,13 +151,14 @@ class PianoVisualGame extends FlameGame {
     if (hasStarted) return;
 
     hasStarted = true;
+    _startedAt = DateTime.now();
 
     GameMusicService.instance.playRandom(
       moods: {GameMusicMood.calm, GameMusicMood.playful},
       volume: 0.22,
     );
 
-    spawnTile();
+    spawnTimer = spawnInterval;
   }
 
   void addLanes() {
@@ -226,7 +247,9 @@ class PianoVisualGame extends FlameGame {
   }
 
   void spawnTile() {
-    if (isSessionFinished) return;
+    if (isSessionFinished || !hasLayout) {
+      return;
+    }
 
     if (activeTiles.length >= maxActiveTiles) {
       return;
@@ -303,7 +326,7 @@ class PianoVisualGame extends FlameGame {
 
     final current = stats.value;
 
-    stats.value = current.copyWith(
+    final updated = current.copyWith(
       hits: current.hits + 1,
       redHits: tile.channel == VisualChannel.red
           ? current.redHits + 1
@@ -312,6 +335,8 @@ class PianoVisualGame extends FlameGame {
           ? current.greenHits + 1
           : current.greenHits,
     );
+
+    stats.value = updated;
 
     final reactionBase = tile.firstPressedAtSeconds ?? elapsedSeconds;
 
@@ -346,6 +371,12 @@ class PianoVisualGame extends FlameGame {
     debugPrint(
       'HIT | id=${tile.id} | channel=${tile.channel.name} | kind=${tile.kind.name} | lane=${tile.laneIndex} | reaction=${reactionTimeMs}ms',
     );
+
+    if (updated.hits >= targetHits) {
+      final result = finishSession(PianoEndReason.targetHitsCompleted);
+
+      onSessionFinished(result);
+    }
   }
 
   void registerMiss(PianoTileComponent tile) {
@@ -416,7 +447,11 @@ class PianoVisualGame extends FlameGame {
     pauseEngine();
 
     _finalResult = PianoSessionResult(
-      startedAt: startedAt,
+      startedAt:
+          _startedAt ??
+          DateTime.now().subtract(
+            Duration(milliseconds: (elapsedSeconds * 1000).round()),
+          ),
       endedAt: DateTime.now(),
       durationSeconds: elapsedSeconds,
       endReason: endReason,
@@ -432,6 +467,7 @@ class PianoVisualGame extends FlameGame {
     GameMusicService.instance.stop();
 
     stats.dispose();
+    remainingSeconds.dispose();
 
     super.onRemove();
   }

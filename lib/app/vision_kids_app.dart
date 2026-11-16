@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../features/calibration/calibration_step_1_screen.dart';
 import '../features/calibration/calibration_step_2_screen.dart';
 import '../features/calibration/calibration_step_3_screen.dart';
-import '../features/games_menu/games_menu_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/onboarding/welcome_screen.dart';
 import '../features/patient_registration/ocular_configuration_screen.dart';
@@ -27,6 +26,10 @@ import '../games/balloon_pop/balloon_pop_screen.dart';
 import '../games/balloon_pop/balloon_preparation_screen.dart';
 import '../games/balloon_pop/balloon_results_screen.dart';
 
+import '../games/road_visual/road_visual_preparation_screen.dart';
+import '../games/road_visual/road_visual_screen.dart';
+import '../games/road_visual/road_visual_results_screen.dart';
+
 import '../features/doctor_results/doctor_login_screen.dart';
 import '../features/doctor_results/doctor_patients_screen.dart';
 
@@ -45,7 +48,7 @@ class VisionKidsApp extends StatelessWidget {
         AppRoutes.patientData: (_) => const PatientDataScreen(),
         AppRoutes.ocularConfig: (_) => const OcularConfigurationScreen(),
         AppRoutes.home: (_) => const HomeScreen(),
-        AppRoutes.games: (_) => const GamesMenuScreen(),
+        AppRoutes.games: (_) => const HomeScreen(),
         AppRoutes.calibrationStep1: (_) => const CalibrationStep1Screen(),
         AppRoutes.calibrationStep2: (_) => const CalibrationStep2Screen(),
         AppRoutes.calibrationStep3: (_) => const CalibrationStep3Screen(),
@@ -62,7 +65,6 @@ class VisionKidsApp extends StatelessWidget {
 
         AppRoutes.farmCrossingPreparation: (_) =>
             const FarmCrossingPreparationScreen(),
-
         AppRoutes.farmCrossing: (context) {
           final difficulty =
               ModalRoute.of(context)?.settings.arguments
@@ -73,10 +75,15 @@ class VisionKidsApp extends StatelessWidget {
         },
 
         AppRoutes.balloonPreparation: (_) => const BalloonPreparationScreen(),
-
         AppRoutes.balloonPop: (_) => const BalloonPopScreen(),
-
         AppRoutes.balloonResults: (_) => const BalloonResultsScreen(),
+
+        AppRoutes.roadVisualPreparation: (_) =>
+            const RoadVisualPreparationScreen(),
+
+        AppRoutes.roadVisual: (_) => const RoadVisualScreen(),
+
+        AppRoutes.roadVisualResults: (_) => const RoadVisualResultsScreen(),
 
         AppRoutes.doctorLogin: (_) => const DoctorLoginScreen(),
         AppRoutes.doctorPatients: (_) => const DoctorPatientsScreen(),
