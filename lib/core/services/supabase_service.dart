@@ -1,7 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../models/patient.dart';
 import '../models/clinical_session_summary.dart';
+import '../models/patient.dart';
 
 class SupabaseService {
   SupabaseService._();
@@ -10,15 +10,39 @@ class SupabaseService {
 
   final SupabaseClient _client = Supabase.instance.client;
 
+  Future<User> _ensureAuthenticatedUser() async {
+    final existingUser = _client.auth.currentUser;
+
+    if (existingUser != null) {
+      return existingUser;
+    }
+
+    try {
+      final response = await _client.auth.signInAnonymously();
+
+      final user = response.user ?? _client.auth.currentUser;
+
+      if (user == null) {
+        throw StateError(
+          'Supabase no devolvió un usuario después del inicio anónimo.',
+        );
+      }
+
+      return user;
+    } on AuthException catch (error) {
+      throw StateError(
+        'No fue posible iniciar sesión en Supabase: ${error.message}',
+      );
+    } catch (error) {
+      throw StateError('No fue posible iniciar sesión en Supabase: $error');
+    }
+  }
+
   Future<Patient> registerPatient({
     required String name,
     required int age,
   }) async {
-    final user = _client.auth.currentUser;
-
-    if (user == null) {
-      throw StateError('No existe un usuario autenticado en Supabase.');
-    }
+    final user = await _ensureAuthenticatedUser();
 
     final normalizedName = name.trim().isEmpty ? 'Paciente' : name.trim();
 
@@ -63,11 +87,7 @@ class SupabaseService {
     required double greenContrast,
     required bool calibrationCompleted,
   }) async {
-    final user = _client.auth.currentUser;
-
-    if (user == null) {
-      throw StateError('No existe un usuario autenticado en Supabase.');
-    }
+    final user = await _ensureAuthenticatedUser();
 
     await _client
         .from('patients')
@@ -85,11 +105,7 @@ class SupabaseService {
     required String patientCode,
     required String name,
   }) async {
-    final user = _client.auth.currentUser;
-
-    if (user == null) {
-      throw StateError('No existe un usuario autenticado en Supabase.');
-    }
+    final user = await _ensureAuthenticatedUser();
 
     await _client
         .from('patients')
@@ -99,11 +115,7 @@ class SupabaseService {
   }
 
   Future<void> saveClinicalSession(ClinicalSessionSummary session) async {
-    final user = _client.auth.currentUser;
-
-    if (user == null) {
-      throw StateError('No existe un usuario autenticado en Supabase.');
-    }
+    await _ensureAuthenticatedUser();
 
     try {
       await _client.from('clinical_sessions').insert({
@@ -127,7 +139,7 @@ class SupabaseService {
         'average_reaction_time_ms': session.averageReactionTimeMs,
       });
     } on PostgrestException catch (error) {
-      // Si ya existe, significa que una sincronización anterior sí llegó.
+      // Si ya existe, una sincronización anterior sí llegó.
       if (error.code == '23505') {
         return;
       }

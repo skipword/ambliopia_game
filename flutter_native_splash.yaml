@@ -1,0 +1,12 @@
+flutter_native_splash:
+  color: "#F5F7FF"
+  image: assets/splash/vision_kids_splash.png
+
+  android: true
+  ios: false
+  web: false
+
+  android_12:
+    color: "#F5F7FF"
+    image: assets/splash/vision_kids_splash.png
+    icon_background_color: "#F5F7FF"

@@ -1,0 +1,5 @@
+launcher_icons:
+  image_path: "assets/icon/vision_kids_icon.png"
+
+  android:
+    generate: true
