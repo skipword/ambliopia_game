@@ -57,7 +57,7 @@ class _PianoPreparationScreenState extends State<PianoPreparationScreen> {
       instructions: const [
         GamePreparationInstruction(
           icon: Icons.touch_app_rounded,
-          text: 'Toca las fichas en la zona indicada.',
+          text: 'Toca cada ficha mientras esté visible.',
         ),
         GamePreparationInstruction(
           icon: Icons.pan_tool_alt_rounded,

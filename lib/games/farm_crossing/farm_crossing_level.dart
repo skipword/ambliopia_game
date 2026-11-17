@@ -28,7 +28,7 @@ extension FarmCrossingDifficultyConfig on FarmCrossingDifficulty {
           description: '3 carriles y vehículos lentos.',
           laneCount: 3,
           targetObjectives: 10,
-          vehicleSpeedMultiplier: 1.0,
+          vehicleSpeedMultiplier: 0.85,
         );
 
       case FarmCrossingDifficulty.intermediate:
@@ -37,7 +37,7 @@ extension FarmCrossingDifficultyConfig on FarmCrossingDifficulty {
           description: '4 carriles y mayor movimiento.',
           laneCount: 4,
           targetObjectives: 15,
-          vehicleSpeedMultiplier: 1.25,
+          vehicleSpeedMultiplier: 1.10,
         );
 
       case FarmCrossingDifficulty.advanced:
@@ -46,7 +46,7 @@ extension FarmCrossingDifficultyConfig on FarmCrossingDifficulty {
           description: '5 carriles y tráfico más rápido.',
           laneCount: 5,
           targetObjectives: 20,
-          vehicleSpeedMultiplier: 1.5,
+          vehicleSpeedMultiplier: 1.35,
         );
     }
   }

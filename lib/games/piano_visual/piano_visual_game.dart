@@ -49,9 +49,6 @@ class PianoVisualGame extends FlameGame {
   bool hasStarted = false;
   bool isSessionFinished = false;
 
-  double get hitZoneTop => size.y * 0.70;
-  double get hitZoneBottom => size.y * 0.88;
-
   double get spawnInterval {
     return switch (difficulty) {
       PianoDifficulty.basic => 1.25,
@@ -116,7 +113,6 @@ class PianoVisualGame extends FlameGame {
     await FlameAudio.audioCache.loadAll(['piano_hit.wav', 'piano_miss.wav']);
 
     addLanes();
-    addHitZone();
   }
 
   @override
@@ -177,23 +173,6 @@ class PianoVisualGame extends FlameGame {
         ),
       );
     }
-  }
-
-  void addHitZone() {
-    add(
-      HitZoneComponent(
-        top: hitZoneTop,
-        bottom: hitZoneBottom,
-        gameWidth: size.x,
-      )..priority = -1,
-    );
-  }
-
-  bool isTileInsideHitZone(PianoTileComponent tile) {
-    final tileTop = tile.y;
-    final tileBottom = tile.y + tile.size.y;
-
-    return tileBottom >= hitZoneTop && tileTop <= hitZoneBottom;
   }
 
   void showFeedback({
@@ -628,16 +607,6 @@ class PianoTileComponent extends PositionComponent
   void onTapDown(TapDownEvent event) {
     if (wasTouched || wasMissed) return;
 
-    if (!game.isTileInsideHitZone(this)) {
-      game.showFeedback(
-        text: 'Espera',
-        position: Vector2(x + size.x / 2, y + size.y / 2),
-        color: Colors.white70,
-      );
-
-      return;
-    }
-
     if (kind == PianoTileKind.tap) {
       wasTouched = true;
       firstPressedAtSeconds = game.elapsedSeconds;
@@ -681,51 +650,6 @@ class PianoTileComponent extends PositionComponent
     wasMissed = true;
     onMiss(this);
     removeFromParent();
-  }
-}
-
-class HitZoneComponent extends PositionComponent {
-  HitZoneComponent({
-    required this.top,
-    required this.bottom,
-    required double gameWidth,
-  }) : super(position: Vector2(0, top), size: Vector2(gameWidth, bottom - top));
-
-  final double top;
-  final double bottom;
-
-  @override
-  void render(Canvas canvas) {
-    super.render(canvas);
-
-    final rect = Rect.fromLTWH(0, 0, size.x, size.y);
-
-    final zonePaint = Paint()..color = Colors.white.withValues(alpha: 0.06);
-
-    canvas.drawRect(rect, zonePaint);
-
-    final linePaint = Paint()
-      ..strokeWidth = 4
-      ..color = AppColors.yellow.withValues(alpha: 0.75);
-
-    canvas.drawLine(Offset(0, size.y), Offset(size.x, size.y), linePaint);
-
-    final text = TextPainter(
-      text: const TextSpan(
-        text: 'TOCA AQUÍ',
-        style: TextStyle(
-          color: Colors.white70,
-          fontSize: 14,
-          fontWeight: FontWeight.w900,
-          letterSpacing: 1.2,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
-
-    text.layout();
-
-    text.paint(canvas, Offset((size.x - text.width) / 2, size.y - 32));
   }
 }
 
